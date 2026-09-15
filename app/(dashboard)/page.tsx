@@ -1,5 +1,5 @@
 import { PageHeader, StatCard, Card } from "@/components/StatCard";
-import { getCars } from "@/lib/queries/cars";
+import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getVehicleStatus } from "@/lib/queries/status";
 import { formatDistanceToNow } from "date-fns";
 
@@ -13,9 +13,12 @@ const STATE_LABEL: Record<string, string> = {
   parked: "Parked",
 };
 
-export default async function OverviewPage() {
-  const cars = await getCars();
-  const car = cars[0];
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
+  const { car } = await getSelectedCar(searchParams);
 
   if (!car) {
     return (

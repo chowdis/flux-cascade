@@ -1,12 +1,15 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { EfficiencyChart } from "@/components/charts/EfficiencyChart";
-import { getCars } from "@/lib/queries/cars";
+import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getDrives, getEfficiencyTrend } from "@/lib/queries/drives";
 import { format } from "date-fns";
 
-export default async function DrivesPage() {
-  const cars = await getCars();
-  const car = cars[0];
+export default async function DrivesPage({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
+  const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
   const [drives, trend] = await Promise.all([

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { signOut } from "next-auth/react";
+import { carLabel, type Car } from "@/lib/car";
 
 const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: GaugeIcon },
@@ -12,8 +13,24 @@ const NAV_ITEMS = [
   { href: "/battery", label: "Battery Health", icon: BatteryIcon },
 ];
 
-export function Sidebar({ carLabel }: { carLabel: string }) {
+export function Sidebar({ cars }: { cars: Car[] }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const requestedId = searchParams.get("car");
+  const selectedCar =
+    cars.find((c) => String(c.id) === requestedId) ?? cars[0];
+
+  function withCar(href: string, carId: number) {
+    return `${href}?car=${carId}`;
+  }
+
+  function handleCarChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const params = new URLSearchParams(searchParams);
+    params.set("car", e.target.value);
+    router.push(`${pathname}?${params.toString()}`);
+  }
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-border bg-surface">
@@ -25,9 +42,30 @@ export function Sidebar({ carLabel }: { carLabel: string }) {
           <div className="text-sm font-semibold leading-tight">
             Flux Cascade
           </div>
-          <div className="text-xs text-muted leading-tight">{carLabel}</div>
         </div>
       </div>
+
+      {cars.length > 0 && (
+        <div className="px-3 pb-3">
+          {cars.length > 1 ? (
+            <select
+              value={selectedCar?.id}
+              onChange={handleCarChange}
+              className="w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-xs text-foreground outline-none focus:border-accent"
+            >
+              {cars.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {carLabel(c)}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="px-1 text-xs text-muted">
+              {selectedCar ? carLabel(selectedCar) : "No vehicle found"}
+            </div>
+          )}
+        </div>
+      )}
 
       <nav className="flex-1 space-y-1 px-3">
         {NAV_ITEMS.map((item) => {
@@ -39,7 +77,9 @@ export function Sidebar({ carLabel }: { carLabel: string }) {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={
+                selectedCar ? withCar(item.href, selectedCar.id) : item.href
+              }
               className={clsx(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition",
                 active

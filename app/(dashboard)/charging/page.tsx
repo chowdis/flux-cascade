@@ -1,6 +1,6 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { ChargingCostChart } from "@/components/charts/ChargingCostChart";
-import { getCars } from "@/lib/queries/cars";
+import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import {
   getChargingByLocation,
   getChargingSessions,
@@ -8,9 +8,12 @@ import {
 } from "@/lib/queries/charging";
 import { format } from "date-fns";
 
-export default async function ChargingPage() {
-  const cars = await getCars();
-  const car = cars[0];
+export default async function ChargingPage({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
+  const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
   const [summary, sessions, locations] = await Promise.all([

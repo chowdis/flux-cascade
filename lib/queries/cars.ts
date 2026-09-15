@@ -1,13 +1,7 @@
 import { pool } from "@/lib/db";
+import { resolveCarId, type Car } from "@/lib/car";
 
-export interface Car {
-  id: number;
-  name: string | null;
-  model: string | null;
-  trim_badging: string | null;
-  vin: string;
-  efficiency: number | null;
-}
+export type { Car };
 
 export async function getCars(): Promise<Car[]> {
   const { rows } = await pool.query<Car>(
@@ -26,4 +20,20 @@ export async function getCar(carId: number): Promise<Car | null> {
     [carId]
   );
   return rows[0] ?? null;
+}
+
+export type PageSearchParams = Promise<{ car?: string }>;
+
+/**
+ * Shared per-page logic: fetch all cars and resolve which one is selected
+ * from the `?car=` query param. Every dashboard page calls this instead of
+ * hardcoding cars[0].
+ */
+export async function getSelectedCar(
+  searchParams: PageSearchParams
+): Promise<{ cars: Car[]; car: Car | null }> {
+  const [cars, params] = await Promise.all([getCars(), searchParams]);
+  const carId = resolveCarId(cars, params.car);
+  const car = cars.find((c) => c.id === carId) ?? null;
+  return { cars, car };
 }

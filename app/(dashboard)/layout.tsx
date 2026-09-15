@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { getCars } from "@/lib/queries/cars";
+import { getCars, type Car } from "@/lib/queries/cars";
 
 // Every page here reads live data from the TeslaMate database and requires
 // an authenticated session — never statically prerender any of it.
@@ -15,22 +16,20 @@ export default async function DashboardLayout({
   // not from its own layout. So this call is caught locally: the pages
   // underneath re-fetch (and re-throw) the same data and get the real
   // error boundary treatment.
-  let carLabel = "No vehicle found";
+  let cars: Car[] = [];
   try {
-    const cars = await getCars();
-    const car = cars[0];
-    if (car) {
-      carLabel = [car.name, car.trim_badging ?? car.model]
-        .filter(Boolean)
-        .join(" · ");
-    }
+    cars = await getCars();
   } catch {
-    carLabel = "Unavailable";
+    // Sidebar handles an empty list gracefully; the page content below
+    // will surface the real error via its own error boundary.
   }
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar carLabel={carLabel} />
+      {/* useSearchParams() in Sidebar requires a Suspense boundary */}
+      <Suspense>
+        <Sidebar cars={cars} />
+      </Suspense>
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>
       </main>

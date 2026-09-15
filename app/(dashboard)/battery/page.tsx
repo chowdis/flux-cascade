@@ -1,11 +1,14 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { BatteryHealthChart } from "@/components/charts/BatteryHealthChart";
-import { getCars } from "@/lib/queries/cars";
+import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getBatteryHealthTrend } from "@/lib/queries/battery";
 
-export default async function BatteryPage() {
-  const cars = await getCars();
-  const car = cars[0];
+export default async function BatteryPage({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
+  const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
   const trend = await getBatteryHealthTrend(car.id);
