@@ -92,6 +92,28 @@ The app listens on port 3000 inside the container; the compose file publishes
 it on host port `3411` — change that mapping if it collides with something else
 on your Unraid box.
 
+**Updating after a `git pull`**: a plain `docker compose build && docker compose up -d`
+can silently reuse a stale container/image instead of picking up the new code
+(seen in practice with Compose Manager Plus, likely due to a Docker Compose
+project-name mismatch between the plugin's managed stack and a manually-run
+`docker compose` in this directory). To guarantee a clean rebuild every time:
+
+```bash
+git pull
+docker compose down
+docker rm -f flux-cascade 2>/dev/null
+docker rmi teslamate_custom-flux-cascade 2>/dev/null  # adjust the image name if yours differs
+docker compose build --no-cache
+docker compose up -d
+```
+
+You can sanity-check that a rebuild actually picked up new source by grepping
+the running container's compiled output for a string you know changed:
+
+```bash
+docker exec flux-cascade grep -r "<some string from the new code>" /app/.next/server/chunks/
+```
+
 ### 5. Expose it at tesla.hidbox.net via Cloudflare Tunnel
 
 Add an ingress rule to your `cloudflared` `config.yml` (alongside your other
