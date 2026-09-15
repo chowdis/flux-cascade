@@ -57,6 +57,9 @@ cp .env.example .env
   account. Use a strong password; this is what stands between the internet and
   your car's data once it's exposed via the tunnel.
 - `TESLAMATE_DB_*` — connection details for the read-only user created above.
+- `TZ` — an IANA timezone name (e.g. `America/New_York`). Every date/time in
+  the app is rendered server-side, so without this the container defaults to
+  UTC no matter where you or the server actually are.
 
 ### 3. Run locally
 

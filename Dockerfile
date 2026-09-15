@@ -15,6 +15,11 @@ FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Alpine ships without the IANA timezone database, so without this, setting
+# TZ has no effect and every date-fns format()/Date call in the app renders
+# in UTC no matter what TZ is set to below.
+RUN apk add --no-cache tzdata
+
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
