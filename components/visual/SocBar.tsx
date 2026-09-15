@@ -20,9 +20,9 @@ export function SocBar({
           style={{ left: `${start}%`, width: `${Math.max(0, end - start)}%` }}
         />
       </div>
-      <div className="mt-1 flex justify-between text-[11px] text-muted">
-        <span>{Math.round(start)}%</span>
-        <span>{Math.round(end)}%</span>
+      <div className="mt-1 text-center text-[11px] text-muted">
+        {Math.round(start)}% <span className="text-accent-2">&rarr;</span>{" "}
+        {Math.round(end)}%
       </div>
     </div>
   );
