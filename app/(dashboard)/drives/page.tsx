@@ -1,5 +1,7 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { EfficiencyChart } from "@/components/charts/EfficiencyChart";
+import { DistanceBar } from "@/components/visual/DistanceBar";
+import { SocBar } from "@/components/visual/SocBar";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getDrives, getEfficiencyTrend } from "@/lib/queries/drives";
 import { format } from "date-fns";
@@ -24,6 +26,7 @@ export default async function DrivesPage({
       ? drives.reduce((sum, d) => sum + (d.speedMaxKph ?? 0), 0) /
         drives.length
       : 0;
+  const maxDistance = Math.max(1, ...drives.map((d) => d.distanceKm ?? 0));
 
   return (
     <div>
@@ -53,39 +56,58 @@ export default async function DrivesPage({
 
       <div className="mt-4">
         <Card title="Recent trips">
-          <div className="space-y-3">
-            {drives.map((d) => (
-              <div
-                key={d.id}
-                className="flex items-center justify-between text-sm"
-              >
-                <div>
-                  <div className="text-foreground">
-                    {d.startAddress ?? "Unknown"} → {d.endAddress ?? "Unknown"}
-                  </div>
-                  <div className="text-xs text-muted">
-                    {format(new Date(d.startDate), "MMM d, HH:mm")} ·{" "}
-                    {d.durationMin ?? 0} min
-                    {d.speedMaxKph !== null && ` · ${d.speedMaxKph} km/h max`}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-foreground">
-                    {d.distanceKm?.toFixed(1) ?? "--"} km
-                  </div>
-                  {d.startBatteryLevel !== null &&
-                    d.endBatteryLevel !== null && (
-                      <div className="text-xs text-muted">
-                        {d.startBatteryLevel}% → {d.endBatteryLevel}%
-                      </div>
-                    )}
-                </div>
-              </div>
-            ))}
-            {drives.length === 0 && (
-              <p className="text-sm text-muted">No drives recorded yet.</p>
-            )}
-          </div>
+          {drives.length === 0 ? (
+            <p className="text-sm text-muted">No drives recorded yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 font-medium">Date</th>
+                    <th className="pb-2 font-medium">Start address</th>
+                    <th className="pb-2 font-medium">Destination address</th>
+                    <th className="pb-2 font-medium">Distance</th>
+                    <th className="pb-2 font-medium">Battery used</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {drives.map((d) => (
+                    <tr key={d.id} className="border-b border-border/60 last:border-0">
+                      <td className="py-3 pr-4 align-top text-foreground">
+                        {format(new Date(d.startDate), "MMM d, yyyy · HH:mm")}
+                        <div className="text-xs text-muted">
+                          {d.durationMin ?? 0} min
+                          {d.speedMaxKph !== null && ` · ${d.speedMaxKph} km/h max`}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4 align-top">
+                        <div className="text-foreground">{d.startLocationLine}</div>
+                        {d.startCityLine && (
+                          <div className="text-xs text-muted">{d.startCityLine}</div>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4 align-top">
+                        <div className="text-foreground">{d.endLocationLine}</div>
+                        {d.endCityLine && (
+                          <div className="text-xs text-muted">{d.endCityLine}</div>
+                        )}
+                      </td>
+                      <td className="w-32 py-3 pr-4 align-middle">
+                        <DistanceBar km={d.distanceKm ?? 0} maxKm={maxDistance} />
+                      </td>
+                      <td className="w-36 py-3 align-middle">
+                        <SocBar
+                          startPct={d.startBatteryLevel}
+                          endPct={d.endBatteryLevel}
+                          tone="used"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
     </div>

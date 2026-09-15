@@ -1,4 +1,5 @@
 import { pool, toNum } from "@/lib/db";
+import { formatLocationLine, formatCityLine } from "@/lib/address";
 
 export interface Drive {
   id: number;
@@ -6,8 +7,10 @@ export interface Drive {
   endDate: string | null;
   distanceKm: number | null;
   durationMin: number | null;
-  startAddress: string | null;
-  endAddress: string | null;
+  startLocationLine: string;
+  startCityLine: string;
+  endLocationLine: string;
+  endCityLine: string;
   startBatteryLevel: number | null;
   endBatteryLevel: number | null;
   speedMaxKph: number | null;
@@ -21,7 +24,12 @@ export async function getDrives(carId: number, limit = 50): Promise<Drive[]> {
   // end_position_id, and battery_level lives on `positions`.
   const { rows } = await pool.query(
     `select d.id, d.start_date, d.end_date, d.distance, d.duration_min,
-            sa.display_name as start_address, ea.display_name as end_address,
+            sa.name as start_name, sa.house_number as start_house_number,
+            sa.road as start_road, sa.city as start_city,
+            sa.county as start_county, sa.state as start_state,
+            ea.name as end_name, ea.house_number as end_house_number,
+            ea.road as end_road, ea.city as end_city,
+            ea.county as end_county, ea.state as end_state,
             sp.battery_level as start_battery_level,
             ep.battery_level as end_battery_level,
             d.speed_max,
@@ -42,8 +50,38 @@ export async function getDrives(carId: number, limit = 50): Promise<Drive[]> {
     endDate: r.end_date,
     distanceKm: toNum(r.distance),
     durationMin: r.duration_min,
-    startAddress: r.start_address,
-    endAddress: r.end_address,
+    startLocationLine: formatLocationLine({
+      name: r.start_name,
+      house_number: r.start_house_number,
+      road: r.start_road,
+      city: r.start_city,
+      county: r.start_county,
+      state: r.start_state,
+    }),
+    startCityLine: formatCityLine({
+      name: r.start_name,
+      house_number: r.start_house_number,
+      road: r.start_road,
+      city: r.start_city,
+      county: r.start_county,
+      state: r.start_state,
+    }),
+    endLocationLine: formatLocationLine({
+      name: r.end_name,
+      house_number: r.end_house_number,
+      road: r.end_road,
+      city: r.end_city,
+      county: r.end_county,
+      state: r.end_state,
+    }),
+    endCityLine: formatCityLine({
+      name: r.end_name,
+      house_number: r.end_house_number,
+      road: r.end_road,
+      city: r.end_city,
+      county: r.end_county,
+      state: r.end_state,
+    }),
     startBatteryLevel: r.start_battery_level,
     endBatteryLevel: r.end_battery_level,
     speedMaxKph: r.speed_max,
