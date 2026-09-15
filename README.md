@@ -74,16 +74,19 @@ docker compose build
 docker compose up -d
 ```
 
-`docker-compose.yml` attaches the container to TeslaMate's Docker network
-(`teslamate_default` by default) so it can reach the Postgres container by
-name — check your actual network name if TeslaMate isn't using the defaults:
+**Reaching TeslaMate's database** depends on how TeslaMate itself is deployed:
 
-```bash
-docker inspect <your-teslamate-db-container> --format '{{json .NetworkSettings.Networks}}'
-```
-
-Update the `networks.teslamate.name` value in `docker-compose.yml` to match,
-and set `TESLAMATE_DB_HOST` in `.env` to that container's name.
+- **Most Unraid Community Apps installs**: TeslaMate's Postgres port (5432) is
+  published straight to the host. In that case you don't need a custom Docker
+  network — `docker-compose.yml` already maps `host.docker.internal` to the
+  host via `extra_hosts`. Just set `TESLAMATE_DB_HOST=host.docker.internal` in
+  `.env`.
+- **TeslaMate deployed via its own docker-compose, on a custom network** (no
+  host port published): check with `docker network ls` and
+  `docker ps --format '{{.Names}}\t{{.Ports}}'`. If there's no published port
+  for Postgres, uncomment the `networks:` block at the bottom of
+  `docker-compose.yml`, set it to your actual network name, and set
+  `TESLAMATE_DB_HOST` to the Postgres container's name.
 
 The app listens on port 3000 inside the container; the compose file publishes
 it on host port `3411` — change that mapping if it collides with something else

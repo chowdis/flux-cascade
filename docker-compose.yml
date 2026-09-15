@@ -8,14 +8,22 @@ services:
       - "3411:3000"
     env_file:
       - .env
-    networks:
-      - default
-      - teslamate
-
-networks:
-  # Attach to TeslaMate's existing Docker network so this container can
-  # reach its Postgres database by container name. Find the real network
-  # name with: docker inspect <teslamate-db-container> --format '{{json .NetworkSettings.Networks}}'
-  teslamate:
-    external: true
-    name: teslamate_default
+    # Lets the container reach the Unraid host itself via the hostname
+    # "host.docker.internal" — the common case, if TeslaMate's Postgres
+    # port (5432) is published to the host like most Unraid Community
+    # Apps installs. Set TESLAMATE_DB_HOST=host.docker.internal in .env
+    # to use it.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # If instead TeslaMate's Postgres only lives on a custom Docker
+    # network (no host port published), attach to that network here
+    # and set TESLAMATE_DB_HOST to the Postgres container's name.
+    # Find the real network name with: docker network ls
+    # networks:
+    #   - default
+    #   - teslamate
+    #
+    # networks:
+    #   teslamate:
+    #     external: true
+    #     name: <your-actual-network-name>
