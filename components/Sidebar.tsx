@@ -139,16 +139,20 @@ export function Sidebar({ cars }: { cars: Car[] }) {
       {/* Backdrop */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-[1000] bg-black/60 lg:hidden"
           onClick={() => setOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* Desktop sidebar (static) + mobile drawer (fixed, slides in) */}
+      {/* Desktop sidebar (static) + mobile drawer (fixed, slides in).
+          z-[1010] — Leaflet's own controls (zoom buttons, attribution) sit
+          at z-index 1000, which otherwise renders on top of this drawer on
+          any page with a map (e.g. Trip Map, or the Overview/last-known-
+          location map). */}
       <aside
         className={clsx(
-          "z-50 flex h-full w-60 flex-col border-r border-border bg-surface transition-transform duration-200 ease-out",
+          "z-[1010] flex h-full w-60 flex-col border-r border-border bg-surface transition-transform duration-200 ease-out",
           "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
