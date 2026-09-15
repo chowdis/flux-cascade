@@ -1,0 +1,21 @@
+services:
+  flux-cascade:
+    build: .
+    # Or, once you've pushed an image: image: ghcr.io/chowdis/flux-cascade:latest
+    container_name: flux-cascade
+    restart: unless-stopped
+    ports:
+      - "3411:3000"
+    env_file:
+      - .env
+    networks:
+      - default
+      - teslamate
+
+networks:
+  # Attach to TeslaMate's existing Docker network so this container can
+  # reach its Postgres database by container name. Find the real network
+  # name with: docker inspect <teslamate-db-container> --format '{{json .NetworkSettings.Networks}}'
+  teslamate:
+    external: true
+    name: teslamate_default
