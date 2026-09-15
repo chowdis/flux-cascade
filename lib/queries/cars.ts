@@ -5,7 +5,8 @@ export type { Car };
 
 export async function getCars(): Promise<Car[]> {
   const { rows } = await pool.query<Car>(
-    `select id, name, model, trim_badging, vin, efficiency
+    `select id, name, model, trim_badging, vin, efficiency,
+            exterior_color, wheel_type
      from cars
      order by display_priority nulls last, id`
   );
@@ -14,7 +15,8 @@ export async function getCars(): Promise<Car[]> {
 
 export async function getCar(carId: number): Promise<Car | null> {
   const { rows } = await pool.query<Car>(
-    `select id, name, model, trim_badging, vin, efficiency
+    `select id, name, model, trim_badging, vin, efficiency,
+            exterior_color, wheel_type
      from cars
      where id = $1`,
     [carId]
