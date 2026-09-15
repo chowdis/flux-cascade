@@ -1,10 +1,12 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { UptimeChart } from "@/components/charts/UptimeChart";
 import { DrainChart } from "@/components/charts/DrainChart";
+import { HoursBar } from "@/components/visual/HoursBar";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getUptimeSummary, getDailyStateBreakdown } from "@/lib/queries/uptime";
 import { getDailyDrain } from "@/lib/queries/drain";
 import { getClimateOnHours, getBatteryHeaterHours } from "@/lib/queries/climate";
+import { getTimeByLocation } from "@/lib/queries/locations";
 
 export default async function IdlePage({
   searchParams,
@@ -14,13 +16,15 @@ export default async function IdlePage({
   const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
-  const [summary, breakdown, drain, climateHours, heaterHours] = await Promise.all([
-    getUptimeSummary(car.id, 30),
-    getDailyStateBreakdown(car.id, 14),
-    getDailyDrain(car.id, 30),
-    getClimateOnHours(car.id, 30),
-    getBatteryHeaterHours(car.id, 30),
-  ]);
+  const [summary, breakdown, drain, climateHours, heaterHours, locationTime] =
+    await Promise.all([
+      getUptimeSummary(car.id, 30),
+      getDailyStateBreakdown(car.id, 14),
+      getDailyDrain(car.id, 30),
+      getClimateOnHours(car.id, 30),
+      getBatteryHeaterHours(car.id, 30),
+      getTimeByLocation(car.id, 30),
+    ]);
 
   const totalHours = summary.reduce((sum, s) => sum + s.hours, 0);
   const hoursByState = Object.fromEntries(summary.map((s) => [s.state, s.hours]));
@@ -87,6 +91,34 @@ export default async function IdlePage({
           <DrainChart data={drain} />
         </Card>
       </div>
+
+      {locationTime.length > 0 && (
+        <div className="mt-4">
+          <Card title="Time parked by location (last 30 days)">
+            <div className="space-y-4">
+              {locationTime.map((loc) => (
+                <div key={loc.name} className="flex items-center gap-4">
+                  <div className="w-28 shrink-0 truncate text-sm text-foreground">
+                    {loc.name}
+                  </div>
+                  <HoursBar
+                    hours={loc.hours}
+                    maxHours={locationTime[0].hours}
+                  />
+                  <div className="w-16 shrink-0 text-right text-xs text-muted">
+                    {loc.visits} visit{loc.visits === 1 ? "" : "s"}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-muted">
+              Based on named locations set up in TeslaMate&apos;s Geo-fences —
+              stops that didn&apos;t end inside a geo-fence aren&apos;t
+              included.
+            </p>
+          </Card>
+        </div>
+      )}
 
       <div className="mt-4">
         <Card>

@@ -1,4 +1,4 @@
-import { PageHeader, Card } from "@/components/StatCard";
+import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { BatteryGauge } from "@/components/visual/BatteryGauge";
 import { TempIcon } from "@/components/visual/TempIcon";
 import { CarVisual } from "@/components/visual/CarVisual";
@@ -7,6 +7,7 @@ import { VehicleMap } from "@/components/VehicleMap";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getVehicleStatus } from "@/lib/queries/status";
 import { getAverageEfficiency } from "@/lib/queries/efficiency";
+import { getWeekSummary } from "@/lib/queries/weekSummary";
 import { formatDistanceToNow } from "date-fns";
 
 const STATE_LABEL: Record<CarVisualState, string> = {
@@ -38,9 +39,10 @@ export default async function OverviewPage({
     );
   }
 
-  const [status, efficiency] = await Promise.all([
+  const [status, efficiency, week] = await Promise.all([
     getVehicleStatus(car.id),
     getAverageEfficiency(car.id, 30),
+    getWeekSummary(car.id),
   ]);
 
   if (!status) {
@@ -77,6 +79,27 @@ export default async function OverviewPage({
         title="Overview"
         description={`${car.name ?? car.model ?? "Vehicle"} · ${car.vin}`}
       />
+
+      <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard
+          label="Distance (7d)"
+          value={`${week.distanceKm.toFixed(0)} km`}
+          sub={`${week.drives} drive${week.drives === 1 ? "" : "s"}`}
+        />
+        <StatCard
+          label="Energy added (7d)"
+          value={`${week.energyAddedKwh.toFixed(0)} kWh`}
+          accent
+        />
+        <StatCard
+          label="Charging cost (7d)"
+          value={week.chargingCost > 0 ? `$${week.chargingCost.toFixed(2)}` : "--"}
+        />
+        <StatCard
+          label="Charging sessions (7d)"
+          value={String(week.chargingSessions)}
+        />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
