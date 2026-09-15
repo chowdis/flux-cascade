@@ -145,9 +145,9 @@ export default async function OverviewPage({
         </Card>
 
         <Card title="Outside temperature">
-          <div className="flex h-full flex-col items-center justify-center gap-2 py-2">
-            <TempIcon celsius={status.outsideTempC} className="h-10 w-10 text-accent" />
-            <div className="text-2xl font-semibold text-foreground">
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-4">
+            <TempIcon celsius={status.outsideTempC} className="h-12 w-12 text-accent" />
+            <div className="text-4xl font-bold text-foreground">
               {status.outsideTempC !== null
                 ? `${status.outsideTempC.toFixed(0)}°C`
                 : "--"}
@@ -159,8 +159,9 @@ export default async function OverviewPage({
         </Card>
 
         <Card title="Odometer">
-          <div className="flex h-full flex-col items-center justify-center py-2">
-            <div className="text-2xl font-semibold text-foreground">
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-4">
+            <OdometerIcon className="h-12 w-12 text-accent" />
+            <div className="text-4xl font-bold text-foreground">
               {status.odometerKm !== null
                 ? Math.round(status.odometerKm).toLocaleString()
                 : "--"}
@@ -170,12 +171,13 @@ export default async function OverviewPage({
         </Card>
 
         <Card title="Efficiency">
-          <div className="flex h-full flex-col items-center justify-center py-2">
-            <div className="text-2xl font-semibold text-foreground">
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-4">
+            <EfficiencyIcon className="h-12 w-12 text-accent" />
+            <div className="text-4xl font-bold text-foreground">
               {efficiency.whPerKm !== null
                 ? Math.round(efficiency.whPerKm)
                 : "--"}
-              <span className="ml-1 text-xs font-normal text-muted">
+              <span className="ml-1 text-sm font-normal text-muted">
                 Wh/km
               </span>
             </div>
@@ -184,5 +186,23 @@ export default async function OverviewPage({
         </Card>
       </div>
     </div>
+  );
+}
+
+function OdometerIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M4 15a8 8 0 1 1 16 0" strokeLinecap="round" />
+      <path d="M12 15l3.5-4.5" strokeLinecap="round" />
+      <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function EfficiencyIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
