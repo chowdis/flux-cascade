@@ -25,7 +25,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden lg:flex-row">
+    <div className="flex h-dvh flex-col overflow-hidden lg:flex-row">
       {/* useSearchParams() in Sidebar requires a Suspense boundary */}
       <Suspense>
         <Sidebar cars={cars} />
