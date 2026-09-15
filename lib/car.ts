@@ -7,6 +7,7 @@ export interface Car {
   name: string | null;
   model: string | null;
   trim_badging: string | null;
+  marketing_name: string | null;
   vin: string;
   efficiency: number | null;
   exterior_color: string | null;
@@ -23,7 +24,10 @@ export function formatModel(model: string | null): string | null {
 }
 
 export function carLabel(car: Car): string {
-  return [car.name, car.trim_badging ?? formatModel(car.model)]
+  // trim_badging is Tesla's raw internal code (e.g. "P74D") — not meant for
+  // display. marketing_name is what TeslaMate derives from it ("LR AWD
+  // Performance"); fall back to just the model if that wasn't computed.
+  return [car.name, car.marketing_name ?? formatModel(car.model)]
     .filter(Boolean)
     .join(" · ");
 }
