@@ -108,34 +108,145 @@ const DEFAULT_WHEEL_CODE: Record<string, string> = {
   my: "WY21P",
 };
 
+// ---------------------------------------------------------------------------
+// 2025+ "Juniper" Model Y refresh
+//
+// The legacy codes above render the *pre-refresh* Model Y body. Tesla's
+// current configurator (tesla.com/modely/design) drives the same compositor
+// with `context=design_studio_2` and a different, `$`-prefixed option-code
+// set — captured from the configurator's own image requests and then
+// verified by fetching renders directly. The compositor validates the whole
+// combination and returns HTTP 412 for anything it doesn't sell together
+// (e.g. a Performance trim on non-Performance wheels), so every trim below
+// is a complete, known-good bundle rather than mix-and-match parts.
+//
+// Only the Performance and base Rear-Wheel Drive trims were confirmed to
+// render; every Long Range AWD combination tried was rejected, so those
+// fall back to the base-trim bundle (right body, wrong wheels) — still far
+// closer to reality than the pre-refresh car.
+// ---------------------------------------------------------------------------
+
+const JUNIPER_TRIMS = {
+  // Performance All-Wheel Drive: 21" Arachnid 2.0 wheels, red calipers.
+  performance: { trim: "$MTY70", wheel: "$WY21A" },
+  // Base Rear-Wheel Drive: 18" Aperture wheels. Note its interior code
+  // differs from the premium trims ($IBB6 vs $IPB8/$IPW8).
+  standard: { trim: "$MTY61", wheel: "$WY18P" },
+} as const;
+
+// Juniper paint codes. Ultra Red was renamed from the legacy PPMR; the
+// greys/silver moved to the PN-series. Midnight Silver (PMNG) is no longer
+// offered and is rejected by the compositor, so it maps to Stealth Grey.
+const JUNIPER_PAINT_CODES: Record<string, string> = {
+  SolidBlack: "$PBSB",
+  Black: "$PBSB",
+  DeepBlueMetallic: "$PPSB",
+  Blue: "$PPSB",
+  PearlWhite: "$PPSW",
+  PearlWhiteMultiCoat: "$PPSW",
+  White: "$PPSW",
+  RedMulticoat: "$PR01",
+  SolidRed: "$PR01",
+  Red: "$PR01",
+  UltraRed: "$PR01",
+  QuicksilverMetallic: "$PN00",
+  StealthGrey: "$PN01",
+  MidnightSilverMetallic: "$PN01",
+  SilverMetallic: "$PN01",
+  SteelGrey: "$PN01",
+  DolphinGrey: "$PN01",
+};
+const JUNIPER_DEFAULT_PAINT_CODE = "$PN01";
+
+// The compositor renders a blank shadow (no car at all) if the interior
+// code is omitted, so one is always sent. TeslaMate doesn't record the
+// interior colour (it's in Tesla's vehicle_config as interior_trim_type,
+// but TeslaMate drops it), so this is pinned to this app's actual Model Y
+// Performance: Black and White. Switch to "$IPB8" for an all-black interior.
+const JUNIPER_PREMIUM_INTERIOR_CODE = "$IPW8";
+const JUNIPER_STANDARD_INTERIOR_CODE = "$IBB6";
+
+// Standard 17-character VIN: position 10 is the model-year code. Letters
+// I, O, Q, U, Z and the digit 0 are never used; 2010–2030 are A–Y and
+// 2031–2039 wrap to 1–9.
+const VIN_YEAR_CODES = "ABCDEFGHJKLMNPRSTVWXY123456789";
+
+export function modelYearFromVin(vin: string | null): number | null {
+  if (!vin || vin.length !== 17) return null;
+  const idx = VIN_YEAR_CODES.indexOf(vin.charAt(9).toUpperCase());
+  return idx === -1 ? null : 2010 + idx;
+}
+
+/**
+ * Whether this Model Y is the 2025+ "Juniper" refresh, judged purely by
+ * VIN model year since TeslaMate stores nothing else that distinguishes
+ * the two bodies. A handful of early-2025-model-year cars were still the
+ * pre-refresh body; those will render as Juniper here, which is the
+ * lesser evil versus showing every 2026 car as the old shape.
+ */
+export function isJuniperModelY(car: Pick<Car, "model" | "vin">): boolean {
+  if (car.model !== "Y") return false;
+  const year = modelYearFromVin(car.vin);
+  return year !== null && year >= 2025;
+}
+
+function isPerformanceTrim(car: Pick<Car, "marketing_name" | "trim_badging">) {
+  // TeslaMate derives marketing_name ("LR AWD Performance") from Tesla's
+  // trim_badging code ("P74D"); check both so either alone is enough.
+  return (
+    /performance/i.test(car.marketing_name ?? "") ||
+    /^P/i.test(car.trim_badging ?? "")
+  );
+}
+
+function juniperOptions(car: Car): string {
+  const paint =
+    (car.exterior_color && JUNIPER_PAINT_CODES[car.exterior_color]) ||
+    JUNIPER_DEFAULT_PAINT_CODE;
+  const bundle = isPerformanceTrim(car)
+    ? JUNIPER_TRIMS.performance
+    : JUNIPER_TRIMS.standard;
+  const interior =
+    bundle === JUNIPER_TRIMS.performance
+      ? JUNIPER_PREMIUM_INTERIOR_CODE
+      : JUNIPER_STANDARD_INTERIOR_CODE;
+  return [bundle.trim, paint, bundle.wheel, interior].join(",");
+}
+
 /**
  * Builds a URL for Tesla's compositor image service, or null if this
  * car's model isn't one it reliably renders (see COMPOSITOR_MODEL_CODES).
  * Callers should still handle the image failing to load (CarVisual.tsx
  * falls back to CarSilhouette in both cases).
  *
- * Known limitation: this renders the *current* Model 3/Y body style —
- * there's no way found so far to request an older pre-refresh (e.g.
- * pre-2023 "Highland") look for an older car.
+ * Model Y renders as the 2025+ Juniper body when the VIN says it is one
+ * (see isJuniperModelY); everything else uses the legacy code set, which
+ * renders the pre-refresh Model Y and the current Model 3 body. There's
+ * still no known way to request the *older* pre-Highland Model 3 look.
  */
 export function getTeslaCompositorUrl(car: Car, size = 800): string | null {
   const modelCode = car.model ? COMPOSITOR_MODEL_CODES[car.model] : undefined;
   if (!modelCode) return null;
-
-  const paint =
-    (car.exterior_color && PAINT_CODES[car.exterior_color]) ||
-    DEFAULT_PAINT_CODE;
-  const wheel =
-    (car.wheel_type && WHEEL_CODES[car.wheel_type]) ||
-    DEFAULT_WHEEL_CODE[modelCode];
 
   const params = new URLSearchParams({
     model: modelCode,
     view: "STUD_3QTR",
     size: String(size),
     bkba_opt: "1",
-    options: `${paint},${wheel}`,
   });
+
+  if (isJuniperModelY(car)) {
+    params.set("context", "design_studio_2");
+    params.set("options", juniperOptions(car));
+  } else {
+    const paint =
+      (car.exterior_color && PAINT_CODES[car.exterior_color]) ||
+      DEFAULT_PAINT_CODE;
+    const wheel =
+      (car.wheel_type && WHEEL_CODES[car.wheel_type]) ||
+      DEFAULT_WHEEL_CODE[modelCode];
+    params.set("options", `${paint},${wheel}`);
+  }
 
   return `https://static-assets.tesla.com/v1/compositor/?${params.toString()}`;
 }
