@@ -6,6 +6,7 @@ import type { CarVisualState } from "@/components/visual/CarSilhouette";
 import { VehicleMap } from "@/components/VehicleMap";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getVehicleStatus } from "@/lib/queries/status";
+import { getAverageEfficiency } from "@/lib/queries/efficiency";
 import { formatDistanceToNow } from "date-fns";
 
 const STATE_LABEL: Record<CarVisualState, string> = {
@@ -37,7 +38,10 @@ export default async function OverviewPage({
     );
   }
 
-  const status = await getVehicleStatus(car.id);
+  const [status, efficiency] = await Promise.all([
+    getVehicleStatus(car.id),
+    getAverageEfficiency(car.id, 30),
+  ]);
 
   if (!status) {
     return (
@@ -130,7 +134,7 @@ export default async function OverviewPage({
         )}
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card title="Battery">
           <BatteryGauge percent={status.batteryLevel} />
           {status.ratedRangeKm !== null && (
@@ -162,6 +166,20 @@ export default async function OverviewPage({
                 : "--"}
             </div>
             <p className="text-xs text-muted">km</p>
+          </div>
+        </Card>
+
+        <Card title="Efficiency">
+          <div className="flex h-full flex-col items-center justify-center py-2">
+            <div className="text-2xl font-semibold text-foreground">
+              {efficiency.whPerKm !== null
+                ? Math.round(efficiency.whPerKm)
+                : "--"}
+              <span className="ml-1 text-xs font-normal text-muted">
+                Wh/km
+              </span>
+            </div>
+            <p className="text-xs text-muted">last 30 days</p>
           </div>
         </Card>
       </div>
