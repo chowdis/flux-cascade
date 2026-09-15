@@ -1,6 +1,8 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { ChargingCostChart } from "@/components/charts/ChargingCostChart";
 import { GasSavingsCard } from "@/components/GasSavingsCard";
+import { EnergyBar } from "@/components/visual/EnergyBar";
+import { SocBar } from "@/components/visual/SocBar";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import {
   getChargingByLocation,
@@ -28,6 +30,7 @@ export default async function ChargingPage({
   const totalEnergy = summary.reduce((sum, m) => sum + m.energyKwh, 0);
   const totalCost = summary.reduce((sum, m) => sum + m.cost, 0);
   const totalSessions = summary.reduce((sum, m) => sum + m.sessions, 0);
+  const maxLocationEnergy = Math.max(1, ...locations.map((l) => l.energyKwh));
 
   return (
     <div>
@@ -66,62 +69,84 @@ export default async function ChargingPage({
         />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4">
         <Card title="Top charging locations">
-          <div className="space-y-3">
-            {locations.map((loc) => (
-              <div
-                key={loc.address}
-                className="flex items-center justify-between text-sm"
-              >
-                <div>
-                  <div className="text-foreground">{loc.address}</div>
-                  <div className="text-xs text-muted">
-                    {loc.sessions} sessions
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-foreground">
-                    {loc.energyKwh.toFixed(0)} kWh
-                  </div>
-                  {loc.cost > 0 && (
-                    <div className="text-xs text-muted">
-                      ${loc.cost.toFixed(2)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            {locations.length === 0 && (
-              <p className="text-sm text-muted">No charging sessions yet.</p>
-            )}
-          </div>
+          {locations.length === 0 ? (
+            <p className="text-sm text-muted">No charging sessions yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 font-medium">Location</th>
+                    <th className="pb-2 font-medium">City &amp; province</th>
+                    <th className="pb-2 font-medium">Energy</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locations.map((loc, i) => (
+                    <tr
+                      key={`${loc.locationLine}-${i}`}
+                      className="border-b border-border/60 last:border-0"
+                    >
+                      <td className="py-3 pr-4 align-top">
+                        <div className="text-foreground">{loc.locationLine}</div>
+                        <div className="text-xs text-muted">
+                          {loc.sessions} session{loc.sessions === 1 ? "" : "s"}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4 align-top text-muted">
+                        {loc.cityLine || "—"}
+                      </td>
+                      <td className="py-3 align-top">
+                        <EnergyBar
+                          kwh={loc.energyKwh}
+                          maxKwh={maxLocationEnergy}
+                          cost={loc.cost}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
+      </div>
 
+      <div className="mt-4">
         <Card title="Recent sessions">
-          <div className="space-y-3">
-            {sessions.slice(0, 8).map((s) => (
+          <div className="divide-y divide-border/60">
+            {sessions.slice(0, 10).map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between text-sm"
+                className="grid grid-cols-1 gap-3 py-3 first:pt-0 last:pb-0 sm:grid-cols-[1.3fr_1fr_auto] sm:items-center sm:gap-4"
               >
                 <div>
-                  <div className="text-foreground">
-                    {format(new Date(s.startDate), "MMM d, HH:mm")}
+                  <div className="text-sm text-foreground">
+                    {format(new Date(s.startDate), "MMM d, yyyy · HH:mm")}
                   </div>
                   <div className="text-xs text-muted">
-                    {s.address ?? "Unknown location"} · {s.startBatteryLevel}%
-                    → {s.endBatteryLevel}%
+                    {s.locationLine}
+                    {s.cityLine && ` · ${s.cityLine}`}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-foreground">
-                    {s.energyAddedKwh?.toFixed(1) ?? "--"} kWh
+
+                <SocBar startPct={s.startBatteryLevel} endPct={s.endBatteryLevel} />
+
+                <div className="flex items-center gap-3 sm:justify-end">
+                  <div className="text-right">
+                    <div className="text-base font-semibold text-foreground">
+                      {s.energyAddedKwh?.toFixed(1) ?? "--"}
+                      <span className="ml-1 text-xs font-normal text-muted">
+                        kWh
+                      </span>
+                    </div>
                   </div>
                   {s.cost !== null && s.cost > 0 && (
-                    <div className="text-xs text-muted">
+                    <span className="rounded-full bg-accent-2/15 px-2.5 py-1 text-xs font-medium text-accent-2">
                       ${s.cost.toFixed(2)}
-                    </div>
+                    </span>
                   )}
                 </div>
               </div>

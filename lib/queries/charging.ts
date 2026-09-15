@@ -1,5 +1,25 @@
 import { pool, toNum } from "@/lib/db";
 
+interface AddressRow {
+  name: string | null;
+  house_number: string | null;
+  road: string | null;
+  city: string | null;
+  county: string | null;
+  state: string | null;
+}
+
+// Deliberately excludes postcode/country — just the street and city/state,
+// which is what people actually want to glance at in these lists.
+function formatLocationLine(a: AddressRow): string {
+  if (a.road) return [a.house_number, a.road].filter(Boolean).join(" ");
+  return a.name ?? "Unknown location";
+}
+
+function formatCityLine(a: AddressRow): string {
+  return [a.city ?? a.county, a.state].filter(Boolean).join(", ");
+}
+
 export interface ChargingSession {
   id: number;
   startDate: string;
@@ -9,7 +29,8 @@ export interface ChargingSession {
   startBatteryLevel: number | null;
   endBatteryLevel: number | null;
   cost: number | null;
-  address: string | null;
+  locationLine: string;
+  cityLine: string;
 }
 
 export async function getChargingSessions(
@@ -19,7 +40,8 @@ export async function getChargingSessions(
   const { rows } = await pool.query(
     `select cp.id, cp.start_date, cp.end_date, cp.duration_min,
             cp.charge_energy_added, cp.start_battery_level, cp.end_battery_level,
-            cp.cost, a.display_name as address
+            cp.cost,
+            a.name, a.house_number, a.road, a.city, a.county, a.state
      from charging_processes cp
      left join addresses a on a.id = cp.address_id
      where cp.car_id = $1 and cp.end_date is not null
@@ -36,7 +58,8 @@ export async function getChargingSessions(
     startBatteryLevel: r.start_battery_level,
     endBatteryLevel: r.end_battery_level,
     cost: toNum(r.cost),
-    address: r.address,
+    locationLine: formatLocationLine(r),
+    cityLine: formatCityLine(r),
   }));
 }
 
@@ -73,7 +96,8 @@ export async function getMonthlyChargingSummary(
 }
 
 export interface LocationBreakdown {
-  address: string;
+  locationLine: string;
+  cityLine: string;
   sessions: number;
   energyKwh: number;
   cost: number;
@@ -83,20 +107,21 @@ export async function getChargingByLocation(
   carId: number
 ): Promise<LocationBreakdown[]> {
   const { rows } = await pool.query(
-    `select coalesce(a.display_name, 'Unknown location') as address,
+    `select a.name, a.house_number, a.road, a.city, a.county, a.state,
             count(*) as sessions,
             coalesce(sum(cp.charge_energy_added), 0) as energy_kwh,
             coalesce(sum(cp.cost), 0) as cost
      from charging_processes cp
      left join addresses a on a.id = cp.address_id
      where cp.car_id = $1 and cp.end_date is not null
-     group by 1
+     group by a.id
      order by energy_kwh desc
      limit 10`,
     [carId]
   );
   return rows.map((r) => ({
-    address: r.address,
+    locationLine: formatLocationLine(r),
+    cityLine: formatCityLine(r),
     sessions: Number(r.sessions),
     energyKwh: Number(r.energy_kwh),
     cost: Number(r.cost),
