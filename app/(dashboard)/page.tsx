@@ -1,16 +1,18 @@
-import { PageHeader, StatCard, Card } from "@/components/StatCard";
+import { PageHeader, Card } from "@/components/StatCard";
+import { BatteryGauge } from "@/components/visual/BatteryGauge";
+import { TempIcon } from "@/components/visual/TempIcon";
+import { CarSilhouette, type CarVisualState } from "@/components/visual/CarSilhouette";
+import { VehicleMap } from "@/components/VehicleMap";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getVehicleStatus } from "@/lib/queries/status";
 import { formatDistanceToNow } from "date-fns";
 
-const STATE_LABEL: Record<string, string> = {
-  online: "Online",
-  asleep: "Asleep",
-  offline: "Offline",
+const STATE_LABEL: Record<CarVisualState, string> = {
+  parked: "Parked",
   driving: "Driving",
   charging: "Charging",
-  updating: "Updating",
-  parked: "Parked",
+  asleep: "Asleep",
+  offline: "Offline",
 };
 
 export default async function OverviewPage({
@@ -36,6 +38,34 @@ export default async function OverviewPage({
 
   const status = await getVehicleStatus(car.id);
 
+  if (!status) {
+    return (
+      <div>
+        <PageHeader
+          title="Overview"
+          description={`${car.name ?? car.model ?? "Vehicle"} · ${car.vin}`}
+        />
+        <Card>
+          <p className="text-sm text-muted">
+            No telemetry recorded yet for this vehicle.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  // `states.state` is only ever online/asleep/offline — driving and
+  // charging come from whether there's an open drive/charging session.
+  const visualState: CarVisualState = status.activeDrive
+    ? "driving"
+    : status.activeCharge
+      ? "charging"
+      : status.state === "asleep"
+        ? "asleep"
+        : status.state === "offline"
+          ? "offline"
+          : "parked";
+
   return (
     <div>
       <PageHeader
@@ -43,97 +73,89 @@ export default async function OverviewPage({
         description={`${car.name ?? car.model ?? "Vehicle"} · ${car.vin}`}
       />
 
-      {!status ? (
-        <Card>
-          <p className="text-sm text-muted">
-            No telemetry recorded yet for this vehicle.
-          </p>
-        </Card>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard
-              label="Status"
-              value={STATE_LABEL[status.state] ?? status.state}
-              sub={
-                status.since
-                  ? `since ${formatDistanceToNow(new Date(status.since))} ago`
-                  : undefined
-              }
-              accent
-            />
-            <StatCard
-              label="Battery"
-              value={
-                status.batteryLevel !== null ? `${status.batteryLevel}%` : "--"
-              }
-              sub={
-                status.ratedRangeKm !== null
-                  ? `${Math.round(status.ratedRangeKm)} km rated range`
-                  : undefined
-              }
-            />
-            <StatCard
-              label="Odometer"
-              value={
-                status.odometerKm !== null
-                  ? `${Math.round(status.odometerKm).toLocaleString()} km`
-                  : "--"
-              }
-            />
-            <StatCard
-              label="Outside temp"
-              value={
-                status.outsideTempC !== null
-                  ? `${status.outsideTempC.toFixed(0)}°C`
-                  : "--"
-              }
-              sub={status.isClimateOn ? "Climate on" : undefined}
-            />
+      <Card>
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+          <div className="w-full max-w-sm">
+            <CarSilhouette state={visualState} />
           </div>
+          <div className="text-center sm:text-right">
+            <div className="text-lg font-semibold text-foreground">
+              {STATE_LABEL[visualState]}
+            </div>
+            {visualState === "charging" && status.activeCharge && (
+              <p className="mt-1 text-sm text-muted">
+                {status.activeCharge.address ?? "Unknown location"}
+                <br />
+                Started{" "}
+                {formatDistanceToNow(new Date(status.activeCharge.startDate))}{" "}
+                ago
+                {status.activeCharge.energyAdded !== null &&
+                  ` · ${status.activeCharge.energyAdded.toFixed(1)} kWh added so far`}
+              </p>
+            )}
+            {visualState === "driving" && status.activeDrive && (
+              <p className="mt-1 text-sm text-muted">
+                From {status.activeDrive.address ?? "unknown location"}
+                <br />
+                Departed{" "}
+                {formatDistanceToNow(new Date(status.activeDrive.startDate))}{" "}
+                ago
+              </p>
+            )}
+            {(visualState === "parked" ||
+              visualState === "asleep" ||
+              visualState === "offline") &&
+              status.since && (
+                <p className="mt-1 text-sm text-muted">
+                  since {formatDistanceToNow(new Date(status.since))} ago
+                </p>
+              )}
+          </div>
+        </div>
+      </Card>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {status.activeCharge && (
-              <Card title="Currently charging">
-                <p className="text-sm text-foreground">
-                  {status.activeCharge.address ?? "Unknown location"}
-                </p>
-                <p className="mt-1 text-xs text-muted">
-                  Started{" "}
-                  {formatDistanceToNow(new Date(status.activeCharge.startDate))}{" "}
-                  ago
-                  {status.activeCharge.energyAdded !== null &&
-                    ` · ${status.activeCharge.energyAdded.toFixed(1)} kWh added so far`}
-                </p>
-              </Card>
-            )}
-            {status.activeDrive && (
-              <Card title="Currently driving">
-                <p className="text-sm text-foreground">
-                  From {status.activeDrive.address ?? "unknown location"}
-                </p>
-                <p className="mt-1 text-xs text-muted">
-                  Departed{" "}
-                  {formatDistanceToNow(new Date(status.activeDrive.startDate))}{" "}
-                  ago
-                </p>
-              </Card>
-            )}
-            {status.latitude !== null && status.longitude !== null && (
-              <Card title="Last known location">
-                <a
-                  href={`https://www.google.com/maps?q=${status.latitude},${status.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-accent hover:underline"
-                >
-                  {status.latitude.toFixed(5)}, {status.longitude.toFixed(5)}{" "}
-                  → open in Maps
-                </a>
-              </Card>
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <Card title="Battery">
+          <BatteryGauge percent={status.batteryLevel} />
+          {status.ratedRangeKm !== null && (
+            <p className="mt-2 text-center text-xs text-muted">
+              {Math.round(status.ratedRangeKm)} km rated range
+            </p>
+          )}
+        </Card>
+
+        <Card title="Outside temperature">
+          <div className="flex h-full flex-col items-center justify-center gap-2 py-2">
+            <TempIcon celsius={status.outsideTempC} className="h-10 w-10 text-accent" />
+            <div className="text-2xl font-semibold text-foreground">
+              {status.outsideTempC !== null
+                ? `${status.outsideTempC.toFixed(0)}°C`
+                : "--"}
+            </div>
+            {status.isClimateOn && (
+              <p className="text-xs text-muted">Climate on</p>
             )}
           </div>
-        </>
+        </Card>
+
+        <Card title="Odometer">
+          <div className="flex h-full flex-col items-center justify-center py-2">
+            <div className="text-2xl font-semibold text-foreground">
+              {status.odometerKm !== null
+                ? Math.round(status.odometerKm).toLocaleString()
+                : "--"}
+            </div>
+            <p className="text-xs text-muted">km</p>
+          </div>
+        </Card>
+      </div>
+
+      {status.latitude !== null && status.longitude !== null && (
+        <div className="mt-4">
+          <Card title="Last known location">
+            <VehicleMap latitude={status.latitude} longitude={status.longitude} />
+          </Card>
+        </div>
       )}
     </div>
   );
