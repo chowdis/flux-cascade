@@ -116,45 +116,58 @@ export default async function ChargingPage({
 
       <div className="mt-4">
         <Card title="Recent sessions">
-          <div className="divide-y divide-border/60">
-            {sessions.slice(0, 10).map((s) => (
-              <div
-                key={s.id}
-                className="grid grid-cols-1 gap-3 py-3 first:pt-0 last:pb-0 sm:grid-cols-[1.3fr_1fr_auto] sm:items-center sm:gap-4"
-              >
-                <div>
-                  <div className="text-sm text-foreground">
-                    {format(new Date(s.startDate), "MMM d, yyyy · HH:mm")}
-                  </div>
-                  <div className="text-xs text-muted">
-                    {s.locationLine}
-                    {s.cityLine && ` · ${s.cityLine}`}
-                  </div>
-                </div>
-
-                <SocBar startPct={s.startBatteryLevel} endPct={s.endBatteryLevel} />
-
-                <div className="flex items-center gap-3 sm:justify-end">
-                  <div className="text-right">
-                    <div className="text-base font-semibold text-foreground">
-                      {s.energyAddedKwh?.toFixed(1) ?? "--"}
-                      <span className="ml-1 text-xs font-normal text-muted">
-                        kWh
-                      </span>
-                    </div>
-                  </div>
-                  {s.cost !== null && s.cost > 0 && (
-                    <span className="rounded-full bg-accent-2/15 px-2.5 py-1 text-xs font-medium text-accent-2">
-                      ${s.cost.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-            {sessions.length === 0 && (
-              <p className="text-sm text-muted">No charging sessions yet.</p>
-            )}
-          </div>
+          {sessions.length === 0 ? (
+            <p className="text-sm text-muted">No charging sessions yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 font-medium">Date</th>
+                    <th className="pb-2 font-medium">Location</th>
+                    <th className="pb-2 font-medium">Charge</th>
+                    <th className="pb-2 text-right font-medium">Energy</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.slice(0, 10).map((s) => (
+                    <tr key={s.id} className="border-b border-border/60 last:border-0">
+                      <td className="py-3 pr-4 align-top text-foreground">
+                        {format(new Date(s.startDate), "MMM d, yyyy · HH:mm")}
+                      </td>
+                      <td className="py-3 pr-4 align-top">
+                        <div className="text-foreground">{s.locationLine}</div>
+                        {s.cityLine && (
+                          <div className="text-xs text-muted">{s.cityLine}</div>
+                        )}
+                      </td>
+                      <td className="w-44 py-3 pr-4 align-middle">
+                        <SocBar
+                          startPct={s.startBatteryLevel}
+                          endPct={s.endBatteryLevel}
+                        />
+                      </td>
+                      <td className="py-3 align-middle">
+                        <div className="flex items-center justify-end gap-3">
+                          <div className="text-base font-semibold text-foreground">
+                            {s.energyAddedKwh?.toFixed(1) ?? "--"}
+                            <span className="ml-1 text-xs font-normal text-muted">
+                              kWh
+                            </span>
+                          </div>
+                          {s.cost !== null && s.cost > 0 && (
+                            <span className="rounded-full bg-accent-2/15 px-2.5 py-1 text-xs font-medium text-accent-2">
+                              ${s.cost.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
     </div>
