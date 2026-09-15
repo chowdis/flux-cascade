@@ -54,7 +54,7 @@ export default async function UpdatesPage({
       {gaps.length > 0 && (
         <div className="mt-4">
           <Card title="Days between updates">
-            <UpdateCadenceChart data={updates} />
+            <UpdateCadenceChart data={updates} avgDays={avgDays} />
           </Card>
         </div>
       )}
