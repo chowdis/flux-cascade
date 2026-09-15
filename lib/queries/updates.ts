@@ -20,12 +20,22 @@ export async function getUpdateHistory(
   carId: number,
   limit = 50
 ): Promise<SoftwareUpdate[]> {
+  // Get the most recent `limit` updates first (order by start_date DESC),
+  // *then* re-sort that set chronologically for the day-gap calculation
+  // below. Sorting ASC with a LIMIT up front (the original bug) returns
+  // the OLDEST `limit` updates instead — invisible for a car with fewer
+  // than `limit` updates on record, but silently wrong for a car with a
+  // long history, like a 2019 Model 3 with years of accumulated updates.
   const { rows } = await pool.query(
     `select version, start_date, end_date
-     from updates
-     where car_id = $1
-     order by start_date asc
-     limit $2`,
+     from (
+       select version, start_date, end_date
+       from updates
+       where car_id = $1
+       order by start_date desc
+       limit $2
+     ) recent
+     order by start_date asc`,
     [carId, limit]
   );
 
