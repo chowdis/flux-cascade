@@ -84,14 +84,35 @@ const WHEEL_CODES: Record<string, string> = {
   AeroTurbine22: "WT22",
   Performancewheel20: "W32P",
   Super21Gray: "WTSG",
+  // Model Y's 21" Performance wheel (Überturbine, with the red brake
+  // calipers) — confirmed by direct testing against the compositor.
+  // TeslaMate's raw wheel_type string for this wheel isn't confirmed, so
+  // this covers a few plausible spellings; the model-specific default
+  // below covers it either way for this app's actual Model Y.
+  Uberturbine21: "WY21P",
+  Turbine21: "WY21P",
+  Arachnid21: "WY21P",
 };
-const DEFAULT_WHEEL_CODE = "W38B";
+
+// W38B (the universal default) renders as blacked-out wheel wells on
+// Model Y specifically — confirmed by testing — so each model gets its
+// own fallback for when wheel_type is missing/unmapped, tuned to look
+// right for this app's actual two cars (Model Y Performance defaults to
+// its correct 21" Performance wheel).
+const DEFAULT_WHEEL_CODE: Record<string, string> = {
+  m3: "W32P",
+  my: "WY21P",
+};
 
 /**
  * Builds a URL for Tesla's compositor image service, or null if this
  * car's model isn't one it reliably renders (see COMPOSITOR_MODEL_CODES).
  * Callers should still handle the image failing to load (CarVisual.tsx
  * falls back to CarSilhouette in both cases).
+ *
+ * Known limitation: this renders the *current* Model 3/Y body style —
+ * there's no way found so far to request an older pre-refresh (e.g.
+ * pre-2023 "Highland") look for an older car.
  */
 export function getTeslaCompositorUrl(car: Car, size = 800): string | null {
   const modelCode = car.model ? COMPOSITOR_MODEL_CODES[car.model] : undefined;
@@ -101,7 +122,8 @@ export function getTeslaCompositorUrl(car: Car, size = 800): string | null {
     (car.exterior_color && PAINT_CODES[car.exterior_color]) ||
     DEFAULT_PAINT_CODE;
   const wheel =
-    (car.wheel_type && WHEEL_CODES[car.wheel_type]) || DEFAULT_WHEEL_CODE;
+    (car.wheel_type && WHEEL_CODES[car.wheel_type]) ||
+    DEFAULT_WHEEL_CODE[modelCode];
 
   const params = new URLSearchParams({
     model: modelCode,
