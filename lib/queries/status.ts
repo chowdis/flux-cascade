@@ -1,4 +1,4 @@
-import { pool } from "@/lib/db";
+import { pool, toNum } from "@/lib/db";
 
 export interface VehicleStatus {
   state: string;
@@ -84,17 +84,17 @@ export async function getVehicleStatus(
     state: s?.state ?? "unknown",
     since: s?.start_date ?? null,
     batteryLevel: p?.battery_level ?? null,
-    idealRangeKm: p?.ideal_battery_range_km ?? null,
-    ratedRangeKm: p?.rated_battery_range_km ?? null,
-    odometerKm: p?.odometer ?? null,
-    latitude: p?.latitude ?? null,
-    longitude: p?.longitude ?? null,
-    outsideTempC: p?.outside_temp ?? null,
+    idealRangeKm: toNum(p?.ideal_battery_range_km),
+    ratedRangeKm: toNum(p?.rated_battery_range_km),
+    odometerKm: toNum(p?.odometer),
+    latitude: toNum(p?.latitude),
+    longitude: toNum(p?.longitude),
+    outsideTempC: toNum(p?.outside_temp),
     isClimateOn: p?.is_climate_on ?? null,
     activeCharge: c
       ? {
           startDate: c.start_date,
-          energyAdded: c.charge_energy_added,
+          energyAdded: toNum(c.charge_energy_added),
           address: c.address ?? null,
         }
       : null,

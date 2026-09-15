@@ -1,4 +1,4 @@
-import { pool } from "@/lib/db";
+import { pool, toNum } from "@/lib/db";
 
 export interface ChargingSession {
   id: number;
@@ -32,10 +32,10 @@ export async function getChargingSessions(
     startDate: r.start_date,
     endDate: r.end_date,
     durationMin: r.duration_min,
-    energyAddedKwh: r.charge_energy_added,
+    energyAddedKwh: toNum(r.charge_energy_added),
     startBatteryLevel: r.start_battery_level,
     endBatteryLevel: r.end_battery_level,
-    cost: r.cost,
+    cost: toNum(r.cost),
     address: r.address,
   }));
 }

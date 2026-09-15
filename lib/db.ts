@@ -44,3 +44,15 @@ pool.on("error", (err) => {
 if (process.env.NODE_ENV !== "production") {
   global.__teslamatePool = pool;
 }
+
+/**
+ * Convert a value that may have come back from Postgres as a string
+ * (NUMERIC/DECIMAL columns) into a JS number. The global type parser above
+ * *should* make this unnecessary, but query code calls this explicitly at
+ * every decimal-typed field anyway rather than depending on it.
+ */
+export function toNum(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  const n = typeof value === "number" ? value : parseFloat(String(value));
+  return Number.isNaN(n) ? null : n;
+}
