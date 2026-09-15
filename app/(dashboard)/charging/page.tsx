@@ -1,5 +1,6 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { ChargingCostChart } from "@/components/charts/ChargingCostChart";
+import { ChargingCurveChart } from "@/components/charts/ChargingCurveChart";
 import { GasSavingsCard } from "@/components/GasSavingsCard";
 import { EnergyBar } from "@/components/visual/EnergyBar";
 import { SocBar } from "@/components/visual/SocBar";
@@ -8,6 +9,7 @@ import {
   getChargingByLocation,
   getChargingSessions,
   getMonthlyChargingSummary,
+  getMostRecentChargingCurve,
 } from "@/lib/queries/charging";
 import { getTotalDistanceKm } from "@/lib/queries/drives";
 import { format } from "date-fns";
@@ -20,12 +22,14 @@ export default async function ChargingPage({
   const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
-  const [summary, sessions, locations, totalDistanceKm] = await Promise.all([
-    getMonthlyChargingSummary(car.id),
-    getChargingSessions(car.id, 25),
-    getChargingByLocation(car.id),
-    getTotalDistanceKm(car.id, 12),
-  ]);
+  const [summary, sessions, locations, totalDistanceKm, chargeCurve] =
+    await Promise.all([
+      getMonthlyChargingSummary(car.id),
+      getChargingSessions(car.id, 25),
+      getChargingByLocation(car.id),
+      getTotalDistanceKm(car.id, 12),
+      getMostRecentChargingCurve(car.id),
+    ]);
 
   const totalEnergy = summary.reduce((sum, m) => sum + m.energyKwh, 0);
   const totalCost = summary.reduce((sum, m) => sum + m.cost, 0);
@@ -61,6 +65,14 @@ export default async function ChargingPage({
           <ChargingCostChart data={summary} />
         </Card>
       </div>
+
+      {chargeCurve && chargeCurve.points.length > 1 && (
+        <div className="mt-4">
+          <Card title="Charging curve (most recent session)">
+            <ChargingCurveChart points={chargeCurve.points} />
+          </Card>
+        </div>
+      )}
 
       <div className="mt-4">
         <GasSavingsCard

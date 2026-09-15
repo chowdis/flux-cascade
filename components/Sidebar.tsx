@@ -11,9 +11,12 @@ const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: GaugeIcon },
   { href: "/charging", label: "Charging", icon: BoltIcon },
   { href: "/drives", label: "Drives", icon: RouteIcon },
+  { href: "/trips", label: "Trip Map", icon: MapPinIcon },
   { href: "/battery", label: "Battery Health", icon: BatteryIcon },
+  { href: "/tpms", label: "Tire Pressure", icon: TireIcon },
   { href: "/idle", label: "Idle & Sleep", icon: MoonIcon },
   { href: "/updates", label: "Software Updates", icon: DownloadIcon },
+  { href: "/compare", label: "Compare Vehicles", icon: CompareIcon },
 ];
 
 export function Sidebar({ cars }: { cars: Car[] }) {
@@ -153,6 +156,34 @@ export function Sidebar({ cars }: { cars: Car[] }) {
         {navContent}
       </aside>
     </>
+  );
+}
+
+function MapPinIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function TireIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3v6M12 15v6M3 12h6M15 12h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CompareIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M8 3v14M8 17l-4-4M8 17l4-4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 21V7M16 7l-4 4M16 7l4 4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 

@@ -27,6 +27,8 @@ export default async function DrivesPage({
         drives.length
       : 0;
   const maxDistance = Math.max(1, ...drives.map((d) => d.distanceKm ?? 0));
+  const totalAscent = drives.reduce((sum, d) => sum + (d.ascentM ?? 0), 0);
+  const totalDescent = drives.reduce((sum, d) => sum + (d.descentM ?? 0), 0);
 
   return (
     <div>
@@ -35,7 +37,7 @@ export default async function DrivesPage({
         description="Recent trips and driving efficiency vs. rated range."
       />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Drives shown" value={String(totalDrives)} />
         <StatCard
           label="Distance shown"
@@ -45,6 +47,14 @@ export default async function DrivesPage({
           label="Avg top speed"
           value={avgSpeed > 0 ? `${avgSpeed.toFixed(0)} km/h` : "--"}
           accent
+        />
+        <StatCard
+          label="Total climbed"
+          value={`${totalAscent.toLocaleString()} m`}
+        />
+        <StatCard
+          label="Total descended"
+          value={`${totalDescent.toLocaleString()} m`}
         />
       </div>
 

@@ -16,6 +16,8 @@ export interface Drive {
   speedMaxKph: number | null;
   rangeUsedKm: number | null;
   consumptionWhPerKm: number | null;
+  ascentM: number | null;
+  descentM: number | null;
 }
 
 export async function getDrives(carId: number, limit = 50): Promise<Drive[]> {
@@ -32,7 +34,7 @@ export async function getDrives(carId: number, limit = 50): Promise<Drive[]> {
             ea.county as end_county, ea.state as end_state,
             sp.battery_level as start_battery_level,
             ep.battery_level as end_battery_level,
-            d.speed_max,
+            d.speed_max, d.ascent, d.descent,
             (d.start_ideal_range_km - d.end_ideal_range_km) as range_used_km
      from drives d
      left join addresses sa on sa.id = d.start_address_id
@@ -90,6 +92,8 @@ export async function getDrives(carId: number, limit = 50): Promise<Drive[]> {
     // so we approximate using the car's stored efficiency where available at
     // render time; fall back to null and let the UI show "--".
     consumptionWhPerKm: null,
+    ascentM: r.ascent,
+    descentM: r.descent,
   }));
 }
 

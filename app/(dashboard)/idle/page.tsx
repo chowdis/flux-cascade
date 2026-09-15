@@ -4,6 +4,7 @@ import { DrainChart } from "@/components/charts/DrainChart";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getUptimeSummary, getDailyStateBreakdown } from "@/lib/queries/uptime";
 import { getDailyDrain } from "@/lib/queries/drain";
+import { getClimateOnHours } from "@/lib/queries/climate";
 
 export default async function IdlePage({
   searchParams,
@@ -13,10 +14,11 @@ export default async function IdlePage({
   const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
-  const [summary, breakdown, drain] = await Promise.all([
+  const [summary, breakdown, drain, climateHours] = await Promise.all([
     getUptimeSummary(car.id, 30),
     getDailyStateBreakdown(car.id, 14),
     getDailyDrain(car.id, 30),
+    getClimateOnHours(car.id, 30),
   ]);
 
   const totalHours = summary.reduce((sum, s) => sum + s.hours, 0);
@@ -35,7 +37,7 @@ export default async function IdlePage({
         description="Time spent online, asleep, or offline, and battery lost while parked (vampire drain) — last 30 days."
       />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard
           label="Asleep"
           value={`${pct(hoursByState.asleep ?? 0).toFixed(0)}%`}
@@ -60,6 +62,11 @@ export default async function IdlePage({
               ? `over ${totalIdleHours.toFixed(0)}h idle`
               : "not enough idle data yet"
           }
+        />
+        <StatCard
+          label="Climate on"
+          value={`${climateHours.toFixed(0)}h`}
+          sub="last 30 days"
         />
       </div>
 

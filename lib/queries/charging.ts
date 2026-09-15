@@ -76,6 +76,54 @@ export async function getMonthlyChargingSummary(
   }));
 }
 
+export interface ChargeCurvePoint {
+  minutesElapsed: number;
+  chargerPowerKw: number | null;
+  batteryLevel: number | null;
+}
+
+export interface ChargeCurve {
+  startDate: string;
+  points: ChargeCurvePoint[];
+}
+
+/**
+ * Per-minute samples (charger power, battery %) within the most recently
+ * completed charging session — the `charges` table, not `charging_processes`
+ * (that only has the session summary).
+ */
+export async function getMostRecentChargingCurve(
+  carId: number
+): Promise<ChargeCurve | null> {
+  const { rows: processRows } = await pool.query(
+    `select id, start_date
+     from charging_processes
+     where car_id = $1 and end_date is not null
+     order by start_date desc
+     limit 1`,
+    [carId]
+  );
+  const process = processRows[0];
+  if (!process) return null;
+
+  const { rows } = await pool.query(
+    `select date, charger_power, battery_level
+     from charges
+     where charging_process_id = $1
+     order by date`,
+    [process.id]
+  );
+
+  const startMs = new Date(process.start_date).getTime();
+  const points = rows.map((r) => ({
+    minutesElapsed: Math.round((new Date(r.date).getTime() - startMs) / 60_000),
+    chargerPowerKw: r.charger_power,
+    batteryLevel: r.battery_level,
+  }));
+
+  return { startDate: process.start_date, points };
+}
+
 export interface LocationBreakdown {
   locationLine: string;
   cityLine: string;
