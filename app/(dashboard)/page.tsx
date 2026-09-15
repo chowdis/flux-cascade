@@ -74,46 +74,61 @@ export default async function OverviewPage({
         description={`${car.name ?? car.model ?? "Vehicle"} · ${car.vin}`}
       />
 
-      <Card>
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-          <div className="w-full max-w-sm">
-            <CarVisual car={car} state={visualState} />
-          </div>
-          <div className="text-center sm:text-right">
-            <div className="text-lg font-semibold text-foreground">
-              {STATE_LABEL[visualState]}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <div className="w-full max-w-sm">
+              <CarVisual car={car} state={visualState} />
             </div>
-            {visualState === "charging" && status.activeCharge && (
-              <p className="mt-1 text-sm text-muted">
-                {status.activeCharge.address ?? "Unknown location"}
-                <br />
-                Started{" "}
-                {formatDistanceToNow(new Date(status.activeCharge.startDate))}{" "}
-                ago
-                {status.activeCharge.energyAdded !== null &&
-                  ` · ${status.activeCharge.energyAdded.toFixed(1)} kWh added so far`}
-              </p>
-            )}
-            {visualState === "driving" && status.activeDrive && (
-              <p className="mt-1 text-sm text-muted">
-                From {status.activeDrive.address ?? "unknown location"}
-                <br />
-                Departed{" "}
-                {formatDistanceToNow(new Date(status.activeDrive.startDate))}{" "}
-                ago
-              </p>
-            )}
-            {(visualState === "parked" ||
-              visualState === "asleep" ||
-              visualState === "offline") &&
-              status.since && (
+            <div className="text-center sm:text-right">
+              <div className="text-lg font-semibold text-foreground">
+                {STATE_LABEL[visualState]}
+              </div>
+              {visualState === "charging" && status.activeCharge && (
                 <p className="mt-1 text-sm text-muted">
-                  since {formatDistanceToNow(new Date(status.since))} ago
+                  {status.activeCharge.address ?? "Unknown location"}
+                  <br />
+                  Started{" "}
+                  {formatDistanceToNow(
+                    new Date(status.activeCharge.startDate)
+                  )}{" "}
+                  ago
+                  {status.activeCharge.energyAdded !== null &&
+                    ` · ${status.activeCharge.energyAdded.toFixed(1)} kWh added so far`}
                 </p>
               )}
+              {visualState === "driving" && status.activeDrive && (
+                <p className="mt-1 text-sm text-muted">
+                  From {status.activeDrive.address ?? "unknown location"}
+                  <br />
+                  Departed{" "}
+                  {formatDistanceToNow(
+                    new Date(status.activeDrive.startDate)
+                  )}{" "}
+                  ago
+                </p>
+              )}
+              {(visualState === "parked" ||
+                visualState === "asleep" ||
+                visualState === "offline") &&
+                status.since && (
+                  <p className="mt-1 text-sm text-muted">
+                    since {formatDistanceToNow(new Date(status.since))} ago
+                  </p>
+                )}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+
+        {status.latitude !== null && status.longitude !== null && (
+          <Card title="Last known location">
+            <VehicleMap
+              latitude={status.latitude}
+              longitude={status.longitude}
+            />
+          </Card>
+        )}
+      </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <Card title="Battery">
@@ -150,14 +165,6 @@ export default async function OverviewPage({
           </div>
         </Card>
       </div>
-
-      {status.latitude !== null && status.longitude !== null && (
-        <div className="mt-4">
-          <Card title="Last known location">
-            <VehicleMap latitude={status.latitude} longitude={status.longitude} />
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
