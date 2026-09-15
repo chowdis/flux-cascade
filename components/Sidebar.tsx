@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
@@ -19,6 +20,17 @@ export function Sidebar({ cars }: { cars: Car[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [open, setOpen] = useState(false);
+
+  // Close the drawer whenever the route actually changes (covers back/
+  // forward navigation, not just clicking a link inside the drawer).
+  // Adjusting state during render (React's recommended pattern for this)
+  // instead of an effect avoids an extra post-navigation render.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setOpen(false);
+  }
 
   const requestedId = searchParams.get("car");
   const selectedCar =
@@ -34,17 +46,13 @@ export function Sidebar({ cars }: { cars: Car[] }) {
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  return (
-    <aside className="flex h-full w-60 flex-col border-r border-border bg-surface">
+  const navContent = (
+    <>
       <div className="flex items-center gap-2 px-5 py-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
           <BoltIcon className="h-4 w-4" />
         </div>
-        <div>
-          <div className="text-sm font-semibold leading-tight">
-            Flux Cascade
-          </div>
-        </div>
+        <div className="text-sm font-semibold leading-tight">Flux Cascade</div>
       </div>
 
       {cars.length > 0 && (
@@ -105,7 +113,54 @@ export function Sidebar({ cars }: { cars: Car[] }) {
           Sign out
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile top bar — hidden on lg+ where the sidebar is always visible */}
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 lg:hidden">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-surface-2"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </button>
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <BoltIcon className="h-3.5 w-3.5" />
+        </div>
+        <div className="text-sm font-semibold">Flux Cascade</div>
+      </header>
+
+      {/* Backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Desktop sidebar (static) + mobile drawer (fixed, slides in) */}
+      <aside
+        className={clsx(
+          "z-50 flex h-full w-60 flex-col border-r border-border bg-surface transition-transform duration-200 ease-out",
+          "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {navContent}
+      </aside>
+    </>
+  );
+}
+
+function MenuIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
