@@ -21,13 +21,18 @@ const LABELS = {
   rr: "Rear right",
 };
 
+// TeslaMate stores TPMS pressure in bar; convert to psi for display.
+const BAR_TO_PSI = 14.5038;
+const toPsi = (bar: number | null) =>
+  bar !== null ? Number((bar * BAR_TO_PSI).toFixed(1)) : null;
+
 export function TpmsChart({ data }: { data: TpmsPoint[] }) {
   const chartData = data.map((d) => ({
     label: format(new Date(d.day), "MMM d"),
-    fl: d.fl !== null ? Number(d.fl.toFixed(2)) : null,
-    fr: d.fr !== null ? Number(d.fr.toFixed(2)) : null,
-    rl: d.rl !== null ? Number(d.rl.toFixed(2)) : null,
-    rr: d.rr !== null ? Number(d.rr.toFixed(2)) : null,
+    fl: toPsi(d.fl),
+    fr: toPsi(d.fr),
+    rl: toPsi(d.rl),
+    rr: toPsi(d.rr),
   }));
 
   return (
@@ -46,15 +51,8 @@ export function TpmsChart({ data }: { data: TpmsPoint[] }) {
           fontSize={12}
           tickLine={false}
           axisLine={false}
-          width={36}
+          width={40}
           domain={["auto", "auto"]}
-          label={{
-            value: "bar",
-            angle: -90,
-            position: "insideLeft",
-            fill: "#8a94a6",
-            fontSize: 11,
-          }}
         />
         <Tooltip
           contentStyle={{
@@ -64,7 +62,7 @@ export function TpmsChart({ data }: { data: TpmsPoint[] }) {
             fontSize: 12,
           }}
           formatter={(value, name) => [
-            `${value} bar`,
+            `${value} psi`,
             LABELS[name as keyof typeof LABELS],
           ]}
         />

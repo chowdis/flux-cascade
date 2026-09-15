@@ -24,9 +24,9 @@ export default async function TpmsPage({
           <>
             <TpmsChart data={trend} />
             <p className="mt-3 text-xs text-muted">
-              Most Tesla models recommend a cold tire pressure around 2.9 bar
-              (42 psi) — check your driver-side door jamb sticker for your
-              exact car&apos;s spec.
+              Most Tesla models recommend a cold tire pressure around 42 psi
+              — check your driver-side door jamb sticker for your exact
+              car&apos;s spec.
             </p>
           </>
         ) : (
