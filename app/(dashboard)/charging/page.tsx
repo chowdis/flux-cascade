@@ -11,6 +11,7 @@ import {
   getMonthlyChargingSummary,
   getMostRecentChargingCurve,
 } from "@/lib/queries/charging";
+import { getChargingByType } from "@/lib/queries/chargerType";
 import { getTotalDistanceKm } from "@/lib/queries/drives";
 import { format } from "date-fns";
 
@@ -22,13 +23,14 @@ export default async function ChargingPage({
   const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
-  const [summary, sessions, locations, totalDistanceKm, chargeCurve] =
+  const [summary, sessions, locations, totalDistanceKm, chargeCurve, byType] =
     await Promise.all([
       getMonthlyChargingSummary(car.id),
       getChargingSessions(car.id, 25),
       getChargingByLocation(car.id),
       getTotalDistanceKm(car.id, 12),
       getMostRecentChargingCurve(car.id),
+      getChargingByType(car.id),
     ]);
 
   const totalEnergy = summary.reduce((sum, m) => sum + m.energyKwh, 0);
@@ -116,6 +118,54 @@ export default async function ChargingPage({
                           maxKwh={maxLocationEnergy}
                           cost={loc.cost}
                         />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div className="mt-4">
+        <Card title="Charging speed &amp; type">
+          {byType.length === 0 ? (
+            <p className="text-sm text-muted">No charging sessions yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 font-medium">Type</th>
+                    <th className="pb-2 font-medium">Sessions</th>
+                    <th className="pb-2 font-medium">Avg. power</th>
+                    <th className="pb-2 font-medium">Energy</th>
+                    <th className="pb-2 text-right font-medium">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byType.map((t) => (
+                    <tr
+                      key={t.chargerType}
+                      className="border-b border-border/60 last:border-0"
+                    >
+                      <td className="py-3 pr-4 align-top text-foreground">
+                        {t.chargerType}
+                      </td>
+                      <td className="py-3 pr-4 align-top text-muted">
+                        {t.sessions}
+                      </td>
+                      <td className="py-3 pr-4 align-top text-muted">
+                        {t.avgMaxPowerKw > 0
+                          ? `${t.avgMaxPowerKw.toFixed(0)} kW`
+                          : "--"}
+                      </td>
+                      <td className="py-3 pr-4 align-top text-foreground">
+                        {t.energyKwh.toFixed(0)} kWh
+                      </td>
+                      <td className="py-3 text-right align-top text-foreground">
+                        ${t.cost.toFixed(2)}
                       </td>
                     </tr>
                   ))}

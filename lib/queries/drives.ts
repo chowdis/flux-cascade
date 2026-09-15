@@ -127,6 +127,61 @@ export async function getEfficiencyTrend(
   }));
 }
 
+export interface LongDrive {
+  id: number;
+  startDate: string;
+  distanceKm: number;
+  durationMin: number | null;
+  speedMaxKph: number | null;
+  startLocationLine: string;
+  endLocationLine: string;
+}
+
+export async function getLongestDrives(
+  carId: number,
+  limit = 10
+): Promise<LongDrive[]> {
+  const { rows } = await pool.query(
+    `select d.id, d.start_date, d.distance, d.duration_min, d.speed_max,
+            sa.name as start_name, sa.house_number as start_house_number,
+            sa.road as start_road, sa.city as start_city,
+            sa.county as start_county, sa.state as start_state,
+            ea.name as end_name, ea.house_number as end_house_number,
+            ea.road as end_road, ea.city as end_city,
+            ea.county as end_county, ea.state as end_state
+     from drives d
+     left join addresses sa on sa.id = d.start_address_id
+     left join addresses ea on ea.id = d.end_address_id
+     where d.car_id = $1 and d.end_date is not null
+     order by d.distance desc
+     limit $2`,
+    [carId, limit]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    startDate: r.start_date,
+    distanceKm: toNum(r.distance) ?? 0,
+    durationMin: r.duration_min,
+    speedMaxKph: r.speed_max,
+    startLocationLine: formatLocationLine({
+      name: r.start_name,
+      house_number: r.start_house_number,
+      road: r.start_road,
+      city: r.start_city,
+      county: r.start_county,
+      state: r.start_state,
+    }),
+    endLocationLine: formatLocationLine({
+      name: r.end_name,
+      house_number: r.end_house_number,
+      road: r.end_road,
+      city: r.end_city,
+      county: r.end_county,
+      state: r.end_state,
+    }),
+  }));
+}
+
 export async function getTotalDistanceKm(
   carId: number,
   months = 12

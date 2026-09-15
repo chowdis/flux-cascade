@@ -30,3 +30,31 @@ export async function getClimateOnHours(
   );
   return toNum(rows[0]?.hours) ?? 0;
 }
+
+/**
+ * Total hours the battery heater was actively running, over the given
+ * window. Same LAG-window technique as getClimateOnHours.
+ */
+export async function getBatteryHeaterHours(
+  carId: number,
+  days = 30
+): Promise<number> {
+  const { rows } = await pool.query(
+    `with p as (
+       select date, battery_heater_on,
+              lag(date) over (order by date) as prev_date,
+              lag(battery_heater_on) over (order by date) as prev_heater_on
+       from positions
+       where car_id = $1
+         and date > now() - ($2 || ' days')::interval - interval '1 day'
+     )
+     select coalesce(sum(extract(epoch from (date - prev_date)) / 3600.0), 0) as hours
+     from p
+     where prev_heater_on = true
+       and prev_date is not null
+       and date - prev_date between interval '0 seconds' and interval '2 hours'
+       and date > now() - ($2 || ' days')::interval`,
+    [carId, days]
+  );
+  return toNum(rows[0]?.hours) ?? 0;
+}

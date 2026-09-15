@@ -1,9 +1,13 @@
 import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { EfficiencyChart } from "@/components/charts/EfficiencyChart";
+import { TempEfficiencyChart } from "@/components/charts/TempEfficiencyChart";
+import { OdometerChart } from "@/components/charts/OdometerChart";
 import { DistanceBar } from "@/components/visual/DistanceBar";
 import { SocBar } from "@/components/visual/SocBar";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
-import { getDrives, getEfficiencyTrend } from "@/lib/queries/drives";
+import { getDrives, getEfficiencyTrend, getLongestDrives } from "@/lib/queries/drives";
+import { getEfficiencyByTemp } from "@/lib/queries/tempEfficiency";
+import { getOdometerTrend } from "@/lib/queries/odometer";
 import { format } from "date-fns";
 
 export default async function DrivesPage({
@@ -14,10 +18,14 @@ export default async function DrivesPage({
   const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
-  const [drives, trend] = await Promise.all([
-    getDrives(car.id, 25),
-    getEfficiencyTrend(car.id),
-  ]);
+  const [drives, trend, tempEfficiency, odometerTrend, longestDrives] =
+    await Promise.all([
+      getDrives(car.id, 25),
+      getEfficiencyTrend(car.id),
+      getEfficiencyByTemp(car.id),
+      getOdometerTrend(car.id),
+      getLongestDrives(car.id, 10),
+    ]);
 
   const totalDistance = drives.reduce((sum, d) => sum + (d.distanceKm ?? 0), 0);
   const totalDrives = drives.length;
@@ -63,6 +71,29 @@ export default async function DrivesPage({
           <EfficiencyChart data={trend} />
         </Card>
       </div>
+
+      {tempEfficiency.length > 0 && (
+        <div className="mt-4">
+          <Card title="Efficiency by outside temperature">
+            <TempEfficiencyChart data={tempEfficiency} />
+            <p className="mt-3 text-xs text-muted">
+              Distance driven per km of rated range used, bucketed by
+              average outside temperature during the drive. Above the
+              dashed line means you did better than the rated range;
+              below means worse — cold weather typically pushes this
+              down.
+            </p>
+          </Card>
+        </div>
+      )}
+
+      {odometerTrend.length > 0 && (
+        <div className="mt-4">
+          <Card title="Lifetime odometer">
+            <OdometerChart data={odometerTrend} />
+          </Card>
+        </div>
+      )}
 
       <div className="mt-4">
         <Card title="Recent trips">
@@ -111,6 +142,47 @@ export default async function DrivesPage({
                           endPct={d.endBatteryLevel}
                           tone="used"
                         />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div className="mt-4">
+        <Card title="Longest drives">
+          {longestDrives.length === 0 ? (
+            <p className="text-sm text-muted">No drives recorded yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 font-medium">#</th>
+                    <th className="pb-2 font-medium">Date</th>
+                    <th className="pb-2 font-medium">Route</th>
+                    <th className="pb-2 text-right font-medium">Distance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {longestDrives.map((d, i) => (
+                    <tr key={d.id} className="border-b border-border/60 last:border-0">
+                      <td className="py-3 pr-4 align-top text-muted">{i + 1}</td>
+                      <td className="py-3 pr-4 align-top text-foreground">
+                        {format(new Date(d.startDate), "MMM d, yyyy")}
+                        <div className="text-xs text-muted">
+                          {d.durationMin ?? 0} min
+                          {d.speedMaxKph !== null && ` · ${d.speedMaxKph} km/h max`}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4 align-top text-foreground">
+                        {d.startLocationLine} &rarr; {d.endLocationLine}
+                      </td>
+                      <td className="py-3 text-right align-top font-semibold text-foreground">
+                        {d.distanceKm.toFixed(1)} km
                       </td>
                     </tr>
                   ))}
