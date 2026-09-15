@@ -2,12 +2,14 @@ import { PageHeader, Card, StatCard } from "@/components/StatCard";
 import { EfficiencyChart } from "@/components/charts/EfficiencyChart";
 import { TempEfficiencyChart } from "@/components/charts/TempEfficiencyChart";
 import { OdometerChart } from "@/components/charts/OdometerChart";
+import { RealEfficiencyChart } from "@/components/charts/RealEfficiencyChart";
 import { DistanceBar } from "@/components/visual/DistanceBar";
 import { SocBar } from "@/components/visual/SocBar";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getDrives, getEfficiencyTrend, getLongestDrives } from "@/lib/queries/drives";
 import { getEfficiencyByTemp } from "@/lib/queries/tempEfficiency";
 import { getOdometerTrend } from "@/lib/queries/odometer";
+import { getRealEfficiencyTrend } from "@/lib/queries/realEfficiency";
 import { format } from "date-fns";
 
 export default async function DrivesPage({
@@ -18,13 +20,14 @@ export default async function DrivesPage({
   const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
-  const [drives, trend, tempEfficiency, odometerTrend, longestDrives] =
+  const [drives, trend, tempEfficiency, odometerTrend, longestDrives, realEfficiency] =
     await Promise.all([
       getDrives(car.id, 25),
       getEfficiencyTrend(car.id),
       getEfficiencyByTemp(car.id),
       getOdometerTrend(car.id),
       getLongestDrives(car.id, 10),
+      getRealEfficiencyTrend(car.id),
     ]);
 
   const totalDistance = drives.reduce((sum, d) => sum + (d.distanceKm ?? 0), 0);
@@ -91,6 +94,22 @@ export default async function DrivesPage({
         <div className="mt-4">
           <Card title="Lifetime odometer">
             <OdometerChart data={odometerTrend} />
+          </Card>
+        </div>
+      )}
+
+      {realEfficiency.some((d) => d.whPerKm !== null) && (
+        <div className="mt-4">
+          <Card title="Real-world efficiency (energy added ÷ distance driven, by month)">
+            <RealEfficiencyChart data={realEfficiency} />
+            <p className="mt-3 text-xs text-muted">
+              Total kWh added at the charger divided by total km driven that
+              month — a different number from the &quot;vs. rated range&quot;
+              chart above. It runs a bit high vs. true consumption since it
+              also includes charging losses and vampire drain, and a
+              month&apos;s charging doesn&apos;t line up perfectly with that
+              month&apos;s driving.
+            </p>
           </Card>
         </div>
       )}

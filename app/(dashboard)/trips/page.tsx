@@ -1,7 +1,9 @@
 import { PageHeader, Card } from "@/components/StatCard";
 import { TripsMap } from "@/components/TripsMap";
+import { TripElevationProfile } from "@/components/TripElevationProfile";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getRecentDrivePaths } from "@/lib/queries/tripmap";
+import { getRecentElevationProfiles } from "@/lib/queries/elevation";
 
 export default async function TripsMapPage({
   searchParams,
@@ -11,7 +13,10 @@ export default async function TripsMapPage({
   const { car } = await getSelectedCar(searchParams);
   if (!car) return null;
 
-  const paths = await getRecentDrivePaths(car.id, 15);
+  const [paths, elevationProfiles] = await Promise.all([
+    getRecentDrivePaths(car.id, 15),
+    getRecentElevationProfiles(car.id, 15),
+  ]);
 
   return (
     <div>
@@ -28,6 +33,14 @@ export default async function TripsMapPage({
           </p>
         )}
       </Card>
+
+      {elevationProfiles.length > 0 && (
+        <div className="mt-4">
+          <Card title="Elevation profile">
+            <TripElevationProfile profiles={elevationProfiles} />
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
