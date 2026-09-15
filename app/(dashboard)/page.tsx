@@ -5,6 +5,7 @@ import { CarSilhouette, type CarVisualState } from "@/components/visual/CarSilho
 import { VehicleMap } from "@/components/VehicleMap";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getVehicleStatus } from "@/lib/queries/status";
+import { silhouetteVariantForModel } from "@/lib/car";
 import { formatDistanceToNow } from "date-fns";
 
 const STATE_LABEL: Record<CarVisualState, string> = {
@@ -76,7 +77,10 @@ export default async function OverviewPage({
       <Card>
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <div className="w-full max-w-sm">
-            <CarSilhouette state={visualState} />
+            <CarSilhouette
+              state={visualState}
+              variant={silhouetteVariantForModel(car.model)}
+            />
           </div>
           <div className="text-center sm:text-right">
             <div className="text-lg font-semibold text-foreground">

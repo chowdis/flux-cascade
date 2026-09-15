@@ -11,8 +11,29 @@ export interface Car {
   efficiency: number | null;
 }
 
+// TeslaMate stores `cars.model` as a short code (derived from the vehicle
+// config's car_type): "3", "Y", "S", "X", or "Cybertruck".
+const MODELS_WITH_PREFIX = new Set(["S", "X", "3", "Y"]);
+
+export function formatModel(model: string | null): string | null {
+  if (!model) return null;
+  return MODELS_WITH_PREFIX.has(model) ? `Model ${model}` : model;
+}
+
 export function carLabel(car: Car): string {
-  return [car.name, car.trim_badging ?? car.model].filter(Boolean).join(" · ");
+  return [car.name, car.trim_badging ?? formatModel(car.model)]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+export type CarModelVariant = "model3" | "modely" | "generic";
+
+export function silhouetteVariantForModel(
+  model: string | null
+): CarModelVariant {
+  if (model === "3" || model === "S") return "model3";
+  if (model === "Y" || model === "X") return "modely";
+  return "generic";
 }
 
 /**
