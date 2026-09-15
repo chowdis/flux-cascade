@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { href: "/charging", label: "Charging", icon: BoltIcon },
   { href: "/drives", label: "Drives", icon: RouteIcon },
   { href: "/battery", label: "Battery Health", icon: BatteryIcon },
+  { href: "/idle", label: "Idle & Sleep", icon: MoonIcon },
+  { href: "/updates", label: "Software Updates", icon: DownloadIcon },
 ];
 
 export function Sidebar({ cars }: { cars: Car[] }) {
@@ -141,6 +143,23 @@ function BatteryIcon(props: React.SVGProps<SVGSVGElement>) {
       <rect x="2" y="7" width="17" height="10" rx="2" />
       <path d="M22 10v4" strokeLinecap="round" />
       <path d="M6 10v4M10 10v4M14 10v4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function MoonIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DownloadIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

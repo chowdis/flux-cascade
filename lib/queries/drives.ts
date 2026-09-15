@@ -84,3 +84,18 @@ export async function getEfficiencyTrend(
     rangeUsedKm: Number(r.range_used_km),
   }));
 }
+
+export async function getTotalDistanceKm(
+  carId: number,
+  months = 12
+): Promise<number> {
+  const { rows } = await pool.query(
+    `select coalesce(sum(distance), 0) as distance_km
+     from drives
+     where car_id = $1
+       and end_date is not null
+       and start_date > now() - ($2 || ' months')::interval`,
+    [carId, months]
+  );
+  return toNum(rows[0]?.distance_km) ?? 0;
+}

@@ -1,0 +1,93 @@
+import { PageHeader, Card, StatCard } from "@/components/StatCard";
+import { UptimeChart } from "@/components/charts/UptimeChart";
+import { DrainChart } from "@/components/charts/DrainChart";
+import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
+import { getUptimeSummary, getDailyStateBreakdown } from "@/lib/queries/uptime";
+import { getDailyDrain } from "@/lib/queries/drain";
+
+export default async function IdlePage({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
+  const { car } = await getSelectedCar(searchParams);
+  if (!car) return null;
+
+  const [summary, breakdown, drain] = await Promise.all([
+    getUptimeSummary(car.id, 30),
+    getDailyStateBreakdown(car.id, 14),
+    getDailyDrain(car.id, 30),
+  ]);
+
+  const totalHours = summary.reduce((sum, s) => sum + s.hours, 0);
+  const hoursByState = Object.fromEntries(summary.map((s) => [s.state, s.hours]));
+  const pct = (h: number) => (totalHours > 0 ? (h / totalHours) * 100 : 0);
+
+  const totalIdleHours = drain.reduce((sum, d) => sum + d.idleHours, 0);
+  const totalBatteryDrop = drain.reduce((sum, d) => sum + d.batteryDropPct, 0);
+  const avgDrainPerDay =
+    totalIdleHours > 0 ? (totalBatteryDrop / totalIdleHours) * 24 : 0;
+
+  return (
+    <div>
+      <PageHeader
+        title="Idle & Sleep"
+        description="Time spent online, asleep, or offline, and battery lost while parked (vampire drain) — last 30 days."
+      />
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard
+          label="Asleep"
+          value={`${pct(hoursByState.asleep ?? 0).toFixed(0)}%`}
+          sub={`${(hoursByState.asleep ?? 0).toFixed(0)}h of last 30 days`}
+          accent
+        />
+        <StatCard
+          label="Online"
+          value={`${pct(hoursByState.online ?? 0).toFixed(0)}%`}
+          sub={`${(hoursByState.online ?? 0).toFixed(0)}h of last 30 days`}
+        />
+        <StatCard
+          label="Offline"
+          value={`${pct(hoursByState.offline ?? 0).toFixed(0)}%`}
+          sub={`${(hoursByState.offline ?? 0).toFixed(0)}h of last 30 days`}
+        />
+        <StatCard
+          label="Avg. vampire drain"
+          value={`${avgDrainPerDay.toFixed(2)}%/day`}
+          sub={
+            totalIdleHours > 0
+              ? `over ${totalIdleHours.toFixed(0)}h idle`
+              : "not enough idle data yet"
+          }
+        />
+      </div>
+
+      <div className="mt-4">
+        <Card title="Online / asleep / offline, by day (last 14 days)">
+          <UptimeChart data={breakdown} />
+        </Card>
+      </div>
+
+      <div className="mt-4">
+        <Card title="Battery lost while parked, by day (last 30 days)">
+          <DrainChart data={drain} />
+        </Card>
+      </div>
+
+      <div className="mt-4">
+        <Card>
+          <p className="text-xs text-muted">
+            &quot;Vampire drain&quot; pairs up consecutive parked telemetry
+            readings (excluding drives and charging sessions) to measure
+            battery lost while just sitting. A car that fails to fall asleep
+            (low &quot;Asleep&quot; %) will usually show up here as
+            higher-than-normal daily drain — Sentry Mode, cabin overheat
+            protection, and some third-party apps polling the car too often
+            are common causes.
+          </p>
+        </Card>
+      </div>
+    </div>
+  );
+}
