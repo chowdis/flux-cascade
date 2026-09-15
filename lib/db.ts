@@ -1,4 +1,13 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
+
+// node-postgres returns NUMERIC/DECIMAL columns as strings (to avoid
+// silent float-precision surprises) and BIGINT as strings (can exceed
+// Number's safe range). TeslaMate uses numeric for most measurements
+// (range, temperature, energy, cost) and nothing here needs bigint
+// precision, so parse both as JS numbers globally instead of
+// converting ad-hoc in every query.
+types.setTypeParser(1700, (val) => parseFloat(val)); // numeric/decimal
+types.setTypeParser(20, (val) => parseInt(val, 10)); // bigint
 
 declare global {
   var __teslamatePool: Pool | undefined;
