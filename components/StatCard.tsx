@@ -1,20 +1,52 @@
 import clsx from "clsx";
 
+// Shared tinted-badge palette for any small icon next to a stat — reused by
+// StatCard here and by YearInReviewCard, so the same three tones (and only
+// these three) show up anywhere a metric gets an icon treatment.
+export const ICON_COLOR_CLASSES = {
+  accent: { bg: "bg-accent/10", text: "text-accent" },
+  accent2: { bg: "bg-accent-2/10", text: "text-accent-2" },
+  warning: { bg: "bg-warning/10", text: "text-warning" },
+} as const;
+
+export type IconColor = keyof typeof ICON_COLOR_CLASSES;
+export type IconComponent = (props: React.SVGProps<SVGSVGElement>) => React.ReactElement;
+
 export function StatCard({
   label,
   value,
   sub,
   accent = false,
+  icon: Icon,
+  iconColor = "accent",
 }: {
   label: string;
   value: string;
   sub?: string;
   accent?: boolean;
+  /** Optional small badge icon shown beside the label — purely decorative. */
+  icon?: IconComponent;
+  iconColor?: IconColor;
 }) {
+  const colors = ICON_COLOR_CLASSES[iconColor];
+
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted">
-        {label}
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-xs font-medium uppercase tracking-wide text-muted">
+          {label}
+        </div>
+        {Icon && (
+          <div
+            className={clsx(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+              colors.bg,
+              colors.text
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </div>
+        )}
       </div>
       <div
         className={clsx(

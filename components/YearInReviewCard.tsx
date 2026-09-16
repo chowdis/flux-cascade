@@ -1,15 +1,11 @@
 import { format } from "date-fns";
-import { Card } from "@/components/StatCard";
+import {
+  Card,
+  ICON_COLOR_CLASSES,
+  type IconColor,
+  type IconComponent,
+} from "@/components/StatCard";
 import type { YearInReview } from "@/lib/queries/yearInReview";
-
-const COLOR_CLASSES = {
-  accent: { bg: "bg-accent/10", text: "text-accent" },
-  accent2: { bg: "bg-accent-2/10", text: "text-accent-2" },
-  warning: { bg: "bg-warning/10", text: "text-warning" },
-} as const;
-
-type IconColor = keyof typeof COLOR_CLASSES;
-type IconComponent = (props: React.SVGProps<SVGSVGElement>) => React.ReactElement;
 
 /**
  * A Spotify-Wrapped-style summary card: one big headline number (distance
@@ -98,7 +94,7 @@ function Tile({
   value: string;
   sub?: string;
 }) {
-  const { bg, text } = COLOR_CLASSES[color];
+  const { bg, text } = ICON_COLOR_CLASSES[color];
   return (
     <div className="flex items-start gap-3 rounded-lg border border-border bg-surface-2/50 p-3">
       <div

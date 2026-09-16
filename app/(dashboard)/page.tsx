@@ -88,19 +88,27 @@ export default async function OverviewPage({
           label="Distance (7d)"
           value={`${week.distanceKm.toFixed(0)} km`}
           sub={`${week.drives} drive${week.drives === 1 ? "" : "s"}`}
+          icon={RouteIcon}
+          iconColor="accent"
         />
         <StatCard
           label="Energy added (7d)"
           value={`${week.energyAddedKwh.toFixed(0)} kWh`}
           accent
+          icon={EfficiencyIcon}
+          iconColor="accent"
         />
         <StatCard
           label="Charging cost (7d)"
           value={week.chargingCost > 0 ? `$${week.chargingCost.toFixed(2)}` : "--"}
+          icon={DollarIcon}
+          iconColor="accent2"
         />
         <StatCard
           label="Charging sessions (7d)"
           value={String(week.chargingSessions)}
+          icon={PlugIcon}
+          iconColor="warning"
         />
       </div>
 
@@ -233,6 +241,39 @@ function EfficiencyIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
       <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function RouteIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <circle cx="6" cy="19" r="2" />
+      <circle cx="18" cy="5" r="2" />
+      <path d="M6 17V13a4 4 0 0 1 4-4h4a4 4 0 0 0 4-4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function DollarIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M12 2v20" strokeLinecap="round" />
+      <path
+        d="M17 6.5c0-1.7-2-3-5-3s-5 1.3-5 3 2 2.6 5 3 5 1.3 5 3-2 3-5 3-5-1.3-5-3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PlugIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M9 7V3M15 7V3" strokeLinecap="round" />
+      <path d="M7 7h10v4a5 5 0 0 1-10 0V7Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 16v5" strokeLinecap="round" />
     </svg>
   );
 }
