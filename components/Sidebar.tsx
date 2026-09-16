@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/charging", label: "Charging", icon: BoltIcon },
   { href: "/costs", label: "Charging Costs & Savings", icon: DollarIcon },
   { href: "/drives", label: "Drives", icon: RouteIcon },
+  { href: "/habits", label: "Driving Habits", icon: ClockIcon },
   { href: "/trips", label: "Trip Map", icon: MapPinIcon },
   { href: "/battery", label: "Battery Health", icon: BatteryIcon },
   { href: "/tpms", label: "Tire Pressure", icon: TireIcon },
@@ -227,6 +228,15 @@ function DollarIcon(props: React.SVGProps<SVGSVGElement>) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function ClockIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
