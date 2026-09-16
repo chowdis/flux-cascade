@@ -36,6 +36,11 @@ const STALE_CHARGE_THRESHOLD_MS = 30 * 60 * 1000;
 // row is actually still happening right now.
 const STALE_POSITION_THRESHOLD_MS = 15 * 60 * 1000;
 
+// How far back to look for actual movement (positions.speed > 0) under an
+// open drive before concluding it isn't really ongoing — see the note
+// below on why fresh telemetry alone isn't proof of a live drive.
+const RECENT_MOVEMENT_WINDOW_MINUTES = 10;
+
 // TeslaMate's `addresses.display_name` is the full raw reverse-geocoded
 // string (street, city, state, postal code, country) — too much for a
 // one-line status line. Build the same short "street, city/state" line
@@ -63,13 +68,17 @@ function formatSingleLine(a: AddressRow): string | null {
  * further telemetry ever attributed to it. So "active" additionally requires:
  *  - the car's actual state is `online` (it can't be driving/charging while
  *    asleep or offline, whatever a stale open row claims);
- *  - for a drive specifically, the single most recent position is both
- *    attributed to that exact drive AND itself less than 15 minutes old —
- *    i.e. there's *live* telemetry proving it's still the current one, not
- *    a leftover from hours or months ago with nothing newer ever logged
- *    (matching drive_id alone isn't enough: if the car went to sleep right
- *    after the drive with no further position ever recorded, the stale
- *    position would still "match" a drive that's long since over); and
+ *  - for a drive specifically: the single most recent position is both
+ *    attributed to that exact drive AND itself less than 15 minutes old
+ *    (rules out a drive with nothing newer ever logged since it really
+ *    ended — e.g. the car went straight to sleep); AND one of the
+ *    positions logged for that drive in the last 10 minutes actually shows
+ *    movement (speed > 0). That second check turned out to matter in
+ *    practice: TeslaMate can keep a drive open and keep attributing fresh,
+ *    perfectly-recent positions to it — with drive_id matching and
+ *    everything — even though the car is just sitting there, if it never
+ *    saw the "drive ended" transition. Fresh telemetry alone isn't proof
+ *    of an ongoing drive; actual recent motion is; and
  *  - for a charge specifically, its most recent `charges` sample (or, if
  *    charging just started and no sample has landed yet, its start_date) is
  *    within the last half hour — a charge can legitimately run for hours
@@ -118,9 +127,16 @@ export async function getVehicleStatus(
     ),
     pool.query(
       `select d.id, d.start_date,
-              a.name, a.house_number, a.road, a.city, a.county, a.state
+              a.name, a.house_number, a.road, a.city, a.county, a.state,
+              recent.max_speed
        from drives d
        left join addresses a on a.id = d.start_address_id
+       left join lateral (
+         select max(p2.speed) as max_speed
+         from positions p2
+         where p2.drive_id = d.id
+           and p2.date > now() - interval '${RECENT_MOVEMENT_WINDOW_MINUTES} minutes'
+       ) recent on true
        where d.car_id = $1 and d.end_date is null
        order by d.start_date desc
        limit 1`,
@@ -146,8 +162,13 @@ export async function getVehicleStatus(
     Date.now() - new Date(p.date).getTime() < STALE_POSITION_THRESHOLD_MS;
 
   const dRow = driveRes.rows[0];
+  const hasRecentMovement = toNum(dRow?.max_speed) !== null && (toNum(dRow?.max_speed) as number) > 0;
   const d =
-    isOnline && isPositionRecent && dRow && dRow.id === p?.drive_id
+    isOnline &&
+    isPositionRecent &&
+    hasRecentMovement &&
+    dRow &&
+    dRow.id === p?.drive_id
       ? dRow
       : undefined;
 
