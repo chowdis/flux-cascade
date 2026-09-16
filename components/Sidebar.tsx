@@ -10,6 +10,7 @@ import { carLabel, type Car } from "@/lib/car";
 const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: GaugeIcon },
   { href: "/charging", label: "Charging", icon: BoltIcon },
+  { href: "/costs", label: "Charging Costs & Savings", icon: DollarIcon },
   { href: "/drives", label: "Drives", icon: RouteIcon },
   { href: "/trips", label: "Trip Map", icon: MapPinIcon },
   { href: "/battery", label: "Battery Health", icon: BatteryIcon },
@@ -213,6 +214,19 @@ function BoltIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
       <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DollarIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M12 2v20" strokeLinecap="round" />
+      <path
+        d="M17 6.5c0-1.7-2-3-5-3s-5 1.3-5 3 2 2.6 5 3 5 1.3 5 3-2 3-5 3-5-1.3-5-3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

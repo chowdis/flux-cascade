@@ -196,3 +196,29 @@ export async function getTotalDistanceKm(
   );
   return toNum(rows[0]?.distance_km) ?? 0;
 }
+
+export interface MonthlyDistance {
+  month: string;
+  distanceKm: number;
+}
+
+export async function getMonthlyDistance(
+  carId: number,
+  months = 12
+): Promise<MonthlyDistance[]> {
+  const { rows } = await pool.query(
+    `select date_trunc('month', start_date) as month,
+            coalesce(sum(distance), 0) as distance_km
+     from drives
+     where car_id = $1
+       and end_date is not null
+       and start_date > now() - ($2 || ' months')::interval
+     group by 1
+     order by 1`,
+    [carId, months]
+  );
+  return rows.map((r) => ({
+    month: r.month,
+    distanceKm: toNum(r.distance_km) ?? 0,
+  }));
+}
