@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/habits", label: "Driving Habits", icon: ClockIcon },
   { href: "/trips", label: "Trip Map", icon: MapPinIcon },
   { href: "/battery", label: "Battery Health", icon: BatteryIcon },
+  { href: "/battery-usage", label: "Battery Usage Patterns", icon: BatteryBandsIcon },
   { href: "/tpms", label: "Tire Pressure", icon: TireIcon },
   { href: "/idle", label: "Idle & Sleep", icon: MoonIcon },
   { href: "/updates", label: "Software Updates", icon: DownloadIcon },
@@ -257,6 +258,16 @@ function BatteryIcon(props: React.SVGProps<SVGSVGElement>) {
       <rect x="2" y="7" width="17" height="10" rx="2" />
       <path d="M22 10v4" strokeLinecap="round" />
       <path d="M6 10v4M10 10v4M14 10v4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BatteryBandsIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <rect x="2" y="7" width="17" height="10" rx="2" />
+      <path d="M22 10v4" strokeLinecap="round" />
+      <path d="M7.5 9v6M12 9v6M16.5 9v6" strokeLinecap="round" opacity="0.5" />
     </svg>
   );
 }

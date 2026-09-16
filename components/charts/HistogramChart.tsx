@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { HistogramBucket } from "@/lib/queries/drivingHabits";
+import type { HistogramBucket } from "@/lib/histogram";
 
 /**
  * A single-series bucketed count chart — shared by the trip-length and

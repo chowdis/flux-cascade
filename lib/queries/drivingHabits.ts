@@ -1,4 +1,5 @@
 import { pool, toNum } from "@/lib/db";
+import type { HistogramBucket } from "@/lib/histogram";
 
 export interface DriveTiming {
   startDate: string;
@@ -57,11 +58,6 @@ export function buildHourDayHeatmap(timings: DriveTiming[]): HeatmapData {
   }
   const maxCount = Math.max(1, ...counts.flat());
   return { counts, maxCount };
-}
-
-export interface HistogramBucket {
-  label: string;
-  count: number;
 }
 
 const DISTANCE_BUCKETS: { max: number; label: string }[] = [
