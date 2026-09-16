@@ -4,12 +4,13 @@ import { TempIcon } from "@/components/visual/TempIcon";
 import { CarVisual } from "@/components/visual/CarVisual";
 import type { CarVisualState } from "@/components/visual/CarSilhouette";
 import { VehicleMap } from "@/components/VehicleMap";
+import { YearInReviewCard } from "@/components/YearInReviewCard";
 import { getSelectedCar, type PageSearchParams } from "@/lib/queries/cars";
 import { getVehicleStatus } from "@/lib/queries/status";
 import { getAverageEfficiency } from "@/lib/queries/efficiency";
 import { getWeekSummary } from "@/lib/queries/weekSummary";
 import { getYearInReview } from "@/lib/queries/yearInReview";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 const STATE_LABEL: Record<CarVisualState, string> = {
   parked: "Parked",
@@ -212,75 +213,7 @@ export default async function OverviewPage({
       </div>
 
       <div className="mt-4">
-        <Card title="Year in review (last 12 months)">
-          <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-            <div>
-              <div className="text-xs text-muted">Distance driven</div>
-              <div className="mt-1 text-foreground">
-                {yearInReview.distanceKm.toLocaleString(undefined, {
-                  maximumFractionDigits: 0,
-                })}{" "}
-                km
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">Drives</div>
-              <div className="mt-1 text-foreground">{yearInReview.drives}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">Energy added</div>
-              <div className="mt-1 text-foreground">
-                {yearInReview.energyKwh.toLocaleString(undefined, {
-                  maximumFractionDigits: 0,
-                })}{" "}
-                kWh
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">Charging cost</div>
-              <div className="mt-1 text-foreground">
-                {yearInReview.chargingCost > 0
-                  ? `$${yearInReview.chargingCost.toFixed(2)}`
-                  : "--"}
-                <span className="ml-1 text-xs text-muted">
-                  ({yearInReview.chargingSessions} sessions)
-                </span>
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">Longest drive</div>
-              <div className="mt-1 text-foreground">
-                {yearInReview.longestDriveKm > 0 ? (
-                  <>
-                    {yearInReview.longestDriveKm.toFixed(0)} km
-                    {yearInReview.longestDriveDate && (
-                      <span className="ml-1 text-xs text-muted">
-                        ({format(new Date(yearInReview.longestDriveDate), "MMM d")})
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  "--"
-                )}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">Most-visited place</div>
-              <div className="mt-1 text-foreground">
-                {yearInReview.topLocationName ? (
-                  <>
-                    {yearInReview.topLocationName}
-                    <span className="ml-1 text-xs text-muted">
-                      ({Math.round(yearInReview.topLocationHours ?? 0)}h)
-                    </span>
-                  </>
-                ) : (
-                  "--"
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
+        <YearInReviewCard data={yearInReview} />
       </div>
     </div>
   );
