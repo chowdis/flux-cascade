@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/tpms", label: "Tire Pressure", icon: TireIcon },
   { href: "/idle", label: "Idle & Sleep", icon: MoonIcon },
   { href: "/updates", label: "Software Updates", icon: DownloadIcon },
+  { href: "/system-health", label: "System Health", icon: PulseIcon },
   { href: "/compare", label: "Compare Vehicles", icon: CompareIcon },
 ];
 
@@ -181,6 +182,18 @@ function TireIcon(props: React.SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="3" />
       <path d="M12 3v6M12 15v6M3 12h6M15 12h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PulseIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path
+        d="M2 12h4l2-7 4 14 3-10 2 3h5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
